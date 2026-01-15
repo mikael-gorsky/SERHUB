@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Firebase config (contains API keys)
+firebaseConfig.ts
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
