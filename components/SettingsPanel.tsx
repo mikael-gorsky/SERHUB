@@ -14,7 +14,7 @@ import {
   Globe,
   Monitor
 } from 'lucide-react';
-import { getAppConfig, checkDatabaseConnection, auth } from '../lib/firebase';
+import { getAppConfig, checkDatabaseConnection, supabase } from '../lib/supabase';
 
 interface DiagnosticResult {
   id: string;
@@ -28,8 +28,8 @@ interface DiagnosticResult {
 const SettingsPanel = () => {
   const [activeTab, setActiveTab] = useState<'diagnostics' | 'notifications'>('diagnostics');
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([
-    { id: 'db', name: 'Firestore Database', description: 'Connectivity to HIT cloud repository', status: 'checking', icon: Server },
-    { id: 'auth', name: 'Identity Engine', description: 'Firebase Authentication service status', status: 'checking', icon: ShieldCheck },
+    { id: 'db', name: 'Supabase Database', description: 'Connectivity to HIT cloud repository', status: 'checking', icon: Server },
+    { id: 'auth', name: 'Identity Engine', description: 'Supabase Authentication service status', status: 'checking', icon: ShieldCheck },
     { id: 'env', name: 'Environment Config', description: 'Institutional API keys & project secrets', status: 'checking', icon: Key },
     { id: 'network', name: 'Network Gateway', description: 'Real-time reachability to cloud services', status: 'checking', icon: Globe },
     { id: 'browser', name: 'Engine Capability', description: 'Local storage and session persistence', status: 'checking', icon: Monitor },
@@ -44,7 +44,7 @@ const SettingsPanel = () => {
     updateDiagnostic('db', dbResult.success ? 'pass' : 'fail', dbResult.message || 'Connected to project ' + getAppConfig().projectId);
 
     // 2. Auth Check
-    updateDiagnostic('auth', auth ? 'pass' : 'fail', auth ? 'Auth service initialized' : 'Auth service failed to load');
+    updateDiagnostic('auth', supabase ? 'pass' : 'fail', supabase ? 'Auth service initialized' : 'Auth service failed to load');
 
     // 3. Env Check
     const config = getAppConfig();

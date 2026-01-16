@@ -1,103 +1,149 @@
-import { db, isConfigured } from '../lib/firebase';
-import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, query, where, setDoc } from 'firebase/firestore';
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { firebaseConfig } from '../firebaseConfig';
-import { User, UserRole } from '../types';
+// Re-export profile functions from supabase.ts
+export {
+  getProfile,
+  getProfiles,
+  updateProfile,
+  getUserTaskStats
+} from '../lib/supabase';
+
+import { Profile, SystemRole, User } from '../types';
+import { supabase, isConfigured } from '../lib/supabase';
+
+// Helper to convert Profile to User display object
+export const profileToUser = (profile: Profile): User => ({
+  id: profile.id,
+  name: profile.title
+    ? `${profile.title} ${profile.first_name} ${profile.last_name}`
+    : `${profile.first_name} ${profile.last_name}`,
+  email: profile.email,
+  role: profile.system_role,
+  avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.first_name + ' ' + profile.last_name)}&background=005695&color=fff`
+});
 
 export const UserService = {
-  getAll: async (): Promise<User[]> => {
-    if (isConfigured && db) {
-      const snapshot = await getDocs(collection(db, 'users'));
-      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as User));
-    }
-    throw new Error("Database not configured.");
-  },
-
-  getById: async (id: string): Promise<User | undefined> => {
-    if (isConfigured && db) {
-      const docRef = doc(db, 'users', id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as User;
-      }
-      return undefined;
-    }
-    throw new Error("Database not configured.");
-  },
-
-  getByEmail: async (email: string): Promise<User | undefined> => {
-    if (isConfigured && db) {
-      const q = query(collection(db, 'users'), where("email", "==", email));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        const d = snapshot.docs[0];
-        return { id: d.id, ...d.data() } as User;
-      }
-      return undefined;
-    }
-    throw new Error("Database not configured.");
-  },
-
-  createUser: async (user: Omit<User, 'id'>): Promise<string> => {
-    if (isConfigured && db) {
-      const docRef = await addDoc(collection(db, 'users'), user);
-      return docRef.id;
-    }
-    throw new Error("Database not configured.");
-  },
-
-  updateUser: async (user: User): Promise<void> => {
-    if (isConfigured && db) {
-      const userRef = doc(db, 'users', user.id);
-      await setDoc(userRef, user, { merge: true });
-    } else {
+  getAll: async (): Promise<Profile[]> => {
+    if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .select('*')
+      .eq('is_active', true)
+      .order('last_name');
+    if (error) throw error;
+    return data || [];
   },
 
-  deleteUser: async (userId: string): Promise<void> => {
-    if (isConfigured && db) {
-      // Direct Firestore deletion
-      await deleteDoc(doc(db, 'users', userId));
-    } else {
+  getAllAsUsers: async (): Promise<User[]> => {
+    const profiles = await UserService.getAll();
+    return profiles.map(profileToUser);
+  },
+
+  getById: async (id: string): Promise<Profile | null> => {
+    if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
   },
 
-  updateUserRole: async (userId: string, newRole: UserRole): Promise<void> => {
-    if (isConfigured && db) {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, { role: newRole });
-    } else {
+  getByEmail: async (email: string): Promise<Profile | null> => {
+    if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .select('*')
+      .ilike('email', email)
+      .single();
+    if (error && error.code !== 'PGRST116') return null;
+    return data;
   },
 
-  provisionUserAccount: async (user: User, temporaryPassword: string): Promise<void> => {
-    if (!isConfigured || !db || !user.email) {
-      throw new Error("DB not configured or invalid user email.");
+  updateProfile: async (userId: string, updates: Partial<Profile>): Promise<Profile | null> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
     }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-    const secondaryAppName = `provisioning-${Date.now()}`;
-    const secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
-    const secondaryAuth = getAuth(secondaryApp);
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, user.email, temporaryPassword);
-      const newUid = userCredential.user.uid;
-      await signOut(secondaryAuth);
-
-      const newUserDoc: User = { ...user, id: newUid };
-      await setDoc(doc(db, 'users', newUid), newUserDoc);
-      
-      // Remove the old invitation/placeholder record if the ID changed
-      if (user.id !== newUid) {
-        await deleteDoc(doc(db, 'users', user.id));
-      }
-    } catch (error: any) {
-      console.error("Provisioning failed:", error);
-      throw error;
+  updateSystemRole: async (userId: string, newRole: SystemRole): Promise<Profile | null> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
     }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .update({ system_role: newRole })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  deactivateUser: async (userId: string): Promise<boolean> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    const { error } = await supabase
+      .from('serhub_profiles')
+      .update({ is_active: false })
+      .eq('id', userId);
+    if (error) throw error;
+    return true;
+  },
+
+  reactivateUser: async (userId: string): Promise<boolean> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    const { error } = await supabase
+      .from('serhub_profiles')
+      .update({ is_active: true })
+      .eq('id', userId);
+    if (error) throw error;
+    return true;
+  },
+
+  // Get users by role
+  getByRole: async (role: SystemRole): Promise<Profile[]> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .select('*')
+      .eq('system_role', role)
+      .eq('is_active', true)
+      .order('last_name');
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Search users by name
+  search: async (query: string): Promise<Profile[]> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .select('*')
+      .eq('is_active', true)
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+      .order('last_name');
+    if (error) throw error;
+    return data || [];
   }
 };

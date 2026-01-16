@@ -7,7 +7,7 @@ import { Loader2, AlertCircle, Mail, Lock, ArrowRight, ChevronDown, UserCheck, S
 import { User } from '../types';
 
 const Login = () => {
-  const { currentUser, signInEmail } = useAuth();
+  const { currentUser, signInEmail, enterGuestMode } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,9 +60,9 @@ const Login = () => {
       navigate('/');
     } catch (err: any) {
       setError('Verification Failed');
-      const msg = err.code === 'auth/invalid-credential' 
-        ? 'The security key entered does not match this identity.' 
-        : (err.code || err.message);
+      const msg = err.message?.includes('Invalid login credentials')
+        ? 'The security key entered does not match this identity.'
+        : (err.message || 'Authentication failed');
       setErrorDetails(msg);
     } finally {
       setLoading(false);
@@ -182,10 +182,19 @@ const Login = () => {
           <button
             onClick={handleMgShortcut}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-hit-accent text-hit-dark font-black py-5 px-8 rounded-[1.5rem] transition-all shadow-lg hover:bg-hit-accent/5 active:scale-95 disabled:opacity-70 uppercase text-[10px] tracking-widest"
+            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-hit-accent text-hit-dark font-black py-5 px-8 rounded-[1.5rem] transition-all shadow-lg hover:bg-hit-accent/5 active:scale-95 disabled:opacity-70 uppercase text-[10px] tracking-widest mb-4"
           >
             <ArrowRight size={18} className="text-hit-accent" />
             <span>Institutional Administrator Login</span>
+          </button>
+
+          <button
+            onClick={() => { enterGuestMode(); navigate('/'); }}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 bg-gray-100 text-gray-600 font-black py-5 px-8 rounded-[1.5rem] transition-all hover:bg-gray-200 active:scale-95 disabled:opacity-70 uppercase text-[10px] tracking-widest"
+          >
+            <UserCheck size={18} />
+            <span>Enter as Guest (Demo Mode)</span>
           </button>
 
           <div className="mt-16 pt-8 border-t border-gray-50 text-center">

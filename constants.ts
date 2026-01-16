@@ -1,149 +1,35 @@
+// SERHUB Constants
+// Mock data removed - now using Supabase database
 
-import { User, UserRole, Section, Task, Document, KnowledgeItem, CalendarEvent } from './types';
+// Role display labels
+export const SYSTEM_ROLE_LABELS: Record<string, string> = {
+  admin: 'Administrator',
+  coordinator: 'Coordinator',
+  member: 'Team Member'
+};
 
-export const USERS: User[] = [
-  { 
-    id: 'u-mg', 
-    name: 'Mikael Gorsky', 
-    email: 'mikaelg@hit.ac.il', 
-    role: UserRole.COORDINATOR, 
-    avatar: 'https://ui-avatars.com/api/?name=Mikael+Gorsky&background=005695&color=fff' 
-  },
-  { 
-    id: 'V93sHZzYX4Uoi1h1ATwwxYsftpS2', 
-    name: 'Auth Proxy User', 
-    email: 'auth@hit.ac.il', 
-    role: UserRole.TEAM_MEMBER, 
-    avatar: 'https://ui-avatars.com/api/?name=Auth+User&background=666&color=fff' 
-  },
-  { id: 'u2', name: 'Dr. Sarah Cohen', email: 'sarah.c@hit.ac.il', role: UserRole.SUPERVISOR, avatar: 'https://picsum.photos/id/1011/200/200' },
-  { id: 'u3', name: 'Prof. David Levi', email: 'david.l@hit.ac.il', role: UserRole.SUPERVISOR, avatar: 'https://picsum.photos/id/1005/200/200' },
-  { id: 'u4', name: 'Maya Regev', email: 'maya.r@hit.ac.il', role: UserRole.TEAM_MEMBER, avatar: 'https://picsum.photos/id/1025/200/200' },
-];
+export const ORGANIZATION_ROLE_LABELS: Record<string, string> = {
+  institution_management: 'Institution Management',
+  parent_unit: 'Parent Unit',
+  department_faculty: 'Department Faculty',
+  adjunct_faculty: 'Adjunct Faculty',
+  student: 'Student',
+  administrative_staff: 'Administrative Staff'
+};
 
-export const CURRENT_USER: User = USERS[0];
+// Status colors for UI
+export const STATUS_COLORS = {
+  on_track: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+  approaching: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+  overdue: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+  blocked: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
+  complete: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' }
+};
 
-export const MOCK_SECTIONS: Section[] = [
-  {
-    id: 'step1',
-    number: 'Step 1',
-    title: 'Mission and Goals',
-    description: 'Review and update the institutional mission statement and strategic goals for the current evaluation period.',
-    progress: 45,
-    docsUrl: 'https://docs.google.com/document/d/1',
-    driveFolderUrl: 'https://drive.google.com/drive/folders/1',
-    documentsExpected: 5,
-    documentsUploaded: 2,
-    tasksTotal: 4,
-    tasksOpen: 2,
-    nextDeadline: '2023-11-15'
-  },
-  {
-    id: 'step2',
-    number: 'Step 2',
-    title: 'Program Structure',
-    description: 'Documentation of curriculum structure, credit allocations, and course syllabi compliance.',
-    progress: 25,
-    docsUrl: 'https://docs.google.com/document/d/2',
-    driveFolderUrl: 'https://drive.google.com/drive/folders/2',
-    documentsExpected: 8,
-    documentsUploaded: 3,
-    tasksTotal: 6,
-    tasksOpen: 4,
-    nextDeadline: '2023-12-05'
-  },
-  {
-    id: 'step3',
-    number: 'Step 3',
-    title: 'Teaching and Learning',
-    description: 'Evaluation of teaching methodologies, assessment tools, and learning outcomes attainment.',
-    progress: 10,
-    docsUrl: 'https://docs.google.com/document/d/3',
-    driveFolderUrl: 'https://drive.google.com/drive/folders/3',
-    documentsExpected: 12,
-    documentsUploaded: 1,
-    tasksTotal: 8,
-    tasksOpen: 7,
-    nextDeadline: '2024-01-20'
-  }
-];
-
-export const MOCK_TASKS: Task[] = [
-  {
-    id: '1.1',
-    title: 'Draft Mission Revision',
-    description: 'Update mission statement to reflect current strategic plan.',
-    sectionId: 'step1',
-    assignedTo: 'u-mg',
-    author: 'Mikael Gorsky',
-    dueDate: '2023-11-10',
-    duration: 5,
-    progress: 80
-  },
-  {
-    id: '1.2',
-    title: 'Collect Syllabi',
-    description: 'Gather all updated syllabi for Semester A.',
-    sectionId: 'step2',
-    assignedTo: 'u4',
-    author: 'AI',
-    dueDate: '2023-11-25',
-    duration: 14,
-    progress: 30
-  }
-];
-
-export const MOCK_DOCS: Document[] = [
-  {
-    id: 'd1',
-    name: 'Strategic Plan 2022-2027',
-    type: 'PDF',
-    url: 'https://drive.google.com/file/d/1',
-    lastUpdated: '2023-09-15',
-    status: 'Uploaded'
-  },
-  {
-    id: 'd2',
-    name: 'Curriculum Map v2',
-    type: 'XLS',
-    url: 'https://drive.google.com/file/d/2',
-    lastUpdated: '2023-10-12',
-    status: 'Uploaded'
-  }
-];
-
-export const MOCK_KNOWLEDGE: KnowledgeItem[] = [
-  {
-    id: 'k1',
-    title: 'CHE Evaluation Handbook',
-    type: 'Guideline',
-    summary: 'Official Council for Higher Education guidelines for institutional self-evaluation.',
-    tags: ['step1', 'step2', 'step3'],
-    link: 'https://che.org.il/guidelines'
-  },
-  {
-    id: 'k2',
-    title: '2018 SER Archive',
-    type: 'History',
-    summary: 'The previous successful submission for benchmarking.',
-    tags: ['step1'],
-    link: '#'
-  }
-];
-
-export const MOCK_EVENTS: CalendarEvent[] = [
-  {
-    id: 'e1',
-    title: 'Internal Review Meeting',
-    date: '2023-11-12',
-    type: 'Meeting',
-    sectionId: 'step1'
-  },
-  {
-    id: 'e2',
-    title: 'Step 1 Submission Deadline',
-    date: '2023-11-15',
-    type: 'Deadline',
-    sectionId: 'step1'
-  }
-];
+// Meeting type labels
+export const MEETING_TYPE_LABELS: Record<string, string> = {
+  project_meeting: 'Project Meeting',
+  review_meeting: 'Review Meeting',
+  recurring_meeting: 'Recurring Meeting',
+  other: 'Other'
+};

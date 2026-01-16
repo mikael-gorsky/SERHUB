@@ -12,9 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Firebase config (contains API keys)
-firebaseConfig.ts
-
 # Environment files
 .env
 .env.local
@@ -30,3 +27,6 @@ firebaseConfig.ts
 *.njsproj
 *.sln
 *.sw?
+
+# Local Netlify folder
+.netlify

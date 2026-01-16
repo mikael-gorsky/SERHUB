@@ -1,42 +1,61 @@
-import { db, isConfigured } from '../lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { MOCK_KNOWLEDGE } from '../constants';
-import { KnowledgeItem } from '../types';
+// Knowledge Service
+// TODO: Add serhub_knowledge table to database schema if needed
+
+export interface KnowledgeItem {
+  id: string;
+  title: string;
+  type: 'Guideline' | 'History' | 'Source' | 'Template';
+  summary: string;
+  tags: string[];
+  link: string;
+}
+
+// Placeholder knowledge items - can be moved to database later
+const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
+  {
+    id: 'k1',
+    title: 'CHE Evaluation Handbook 2024',
+    type: 'Guideline',
+    summary: 'Official Council for Higher Education guidelines for institutional self-evaluation.',
+    tags: ['all'],
+    link: 'https://che.org.il/guidelines'
+  },
+  {
+    id: 'k2',
+    title: 'Previous SER Template',
+    type: 'Template',
+    summary: 'Template document from previous successful submission.',
+    tags: ['all'],
+    link: '#'
+  },
+  {
+    id: 'k3',
+    title: 'Data Collection Guidelines',
+    type: 'Guideline',
+    summary: 'Guidelines for collecting and presenting quantitative data in the SER.',
+    tags: ['3.3', '3.4'],
+    link: '#'
+  }
+];
 
 export const KnowledgeService = {
   getAll: async (): Promise<KnowledgeItem[]> => {
-    if (isConfigured && db) {
-      try {
-        const snapshot = await getDocs(collection(db, 'knowledge'));
-        if (!snapshot.empty) {
-          return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as KnowledgeItem));
-        }
-        return [];
-      } catch (e) {
-        console.warn("Failed to fetch knowledge from DB.", e);
-        return [];
-      }
-    }
-    return new Promise((resolve) => setTimeout(() => resolve([...MOCK_KNOWLEDGE]), 300));
+    // Return static knowledge items for now
+    return Promise.resolve(KNOWLEDGE_ITEMS);
   },
 
-  getBySectionId: async (sectionId: string): Promise<KnowledgeItem[]> => {
-    if (isConfigured && db) {
-      try {
-        const q = query(collection(db, 'knowledge'), where("tags", "array-contains", sectionId));
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as KnowledgeItem));
-        } else {
-            return [];
-        }
-      } catch (e) {
-        console.warn("Failed to fetch section knowledge from DB.", e);
-        return [];
-      }
-    }
-    return new Promise((resolve) => 
-      setTimeout(() => resolve(MOCK_KNOWLEDGE.filter(k => k.tags.includes(sectionId))), 400)
+  getBySectionId: async (sectionNumber: string): Promise<KnowledgeItem[]> => {
+    // Filter by section number or return all if 'all' tag
+    return Promise.resolve(
+      KNOWLEDGE_ITEMS.filter(k =>
+        k.tags.includes('all') || k.tags.includes(sectionNumber)
+      )
+    );
+  },
+
+  getByType: async (type: KnowledgeItem['type']): Promise<KnowledgeItem[]> => {
+    return Promise.resolve(
+      KNOWLEDGE_ITEMS.filter(k => k.type === type)
     );
   }
 };
