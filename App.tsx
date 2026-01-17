@@ -18,8 +18,8 @@ import UserAvatar from './components/UserAvatar';
 import SectionTree from './components/SectionTree';
 import SectionDetail from './components/SectionDetail';
 import TabNavigation, { TabType } from './components/TabNavigation';
-import OrgTasksManager from './components/OrgTasksManager';
-import MeetingsManager from './components/MeetingsManager';
+import TasksView from './components/TasksView';
+import MeetingsView from './components/MeetingsView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Section } from './types';
 
@@ -104,9 +104,9 @@ const TopHeader = () => {
   );
 };
 
-// --- Main View with Tabs (Report, Org Tasks, Meetings) ---
+// --- Main View with Tabs (Dashboard, Tasks, Meetings, Users, Settings) ---
 const MainView = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('report');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
   return (
@@ -115,8 +115,8 @@ const MainView = () => {
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'report' && (
+      <div className="flex-1 overflow-hidden bg-gray-50">
+        {activeTab === 'dashboard' && (
           <div className="flex h-full">
             {/* Section Tree Sidebar */}
             <SectionTree
@@ -144,12 +144,24 @@ const MainView = () => {
           </div>
         )}
 
-        {activeTab === 'org-tasks' && (
-          <OrgTasksManager />
+        {activeTab === 'tasks' && (
+          <TasksView />
         )}
 
         {activeTab === 'meetings' && (
-          <MeetingsManager />
+          <MeetingsView />
+        )}
+
+        {activeTab === 'users' && (
+          <div className="p-6 h-full">
+            <TeamManager />
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="p-6 h-full">
+            <SettingsPanel />
+          </div>
         )}
       </div>
     </div>

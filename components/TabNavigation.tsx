@@ -1,7 +1,7 @@
 import React from 'react';
-import { FileText, Briefcase, Calendar } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, Users, Settings } from 'lucide-react';
 
-export type TabType = 'report' | 'org-tasks' | 'meetings';
+export type TabType = 'dashboard' | 'tasks' | 'meetings' | 'users' | 'settings';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -9,9 +9,11 @@ interface TabNavigationProps {
 }
 
 const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
-  { id: 'report', label: 'Report', icon: <FileText size={18} /> },
-  { id: 'org-tasks', label: 'Org Tasks', icon: <Briefcase size={18} /> },
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+  { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={18} /> },
   { id: 'meetings', label: 'Meetings', icon: <Calendar size={18} /> },
+  { id: 'users', label: 'Users', icon: <Users size={18} /> },
+  { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ];
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange }) => {
