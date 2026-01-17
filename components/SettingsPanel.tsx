@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldCheck, 
+import {
+  ShieldCheck,
   Activity,
-  Bell, 
+  Bell,
   RefreshCw,
   Loader2,
   CheckCircle,
@@ -12,9 +12,12 @@ import {
   Server,
   Key,
   Globe,
-  Monitor
+  Monitor,
+  Palette,
+  Check
 } from 'lucide-react';
 import { getAppConfig, checkDatabaseConnection, supabase } from '../lib/supabase';
+import { useTheme, themes } from '../contexts/ThemeContext';
 
 interface DiagnosticResult {
   id: string;
@@ -26,7 +29,8 @@ interface DiagnosticResult {
 }
 
 const SettingsPanel = () => {
-  const [activeTab, setActiveTab] = useState<'diagnostics' | 'notifications'>('diagnostics');
+  const { theme, themeName, setTheme, availableThemes } = useTheme();
+  const [activeTab, setActiveTab] = useState<'appearance' | 'diagnostics' | 'notifications'>('appearance');
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([
     { id: 'db', name: 'Supabase Database', description: 'Connectivity to HIT cloud repository', status: 'checking', icon: Server },
     { id: 'auth', name: 'Identity Engine', description: 'Supabase Authentication service status', status: 'checking', icon: ShieldCheck },
@@ -83,10 +87,20 @@ const SettingsPanel = () => {
         </div>
         <nav className="p-4 space-y-2 flex-1">
           <button
+            onClick={() => setActiveTab('appearance')}
+            className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-black transition-all ${
+              activeTab === 'appearance'
+              ? `bg-${theme.primary} text-white shadow-xl shadow-${theme.primary}/20`
+              : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            <Palette size={20} /> Appearance
+          </button>
+          <button
             onClick={() => setActiveTab('diagnostics')}
             className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-black transition-all ${
-              activeTab === 'diagnostics' 
-              ? 'bg-hit-blue text-white shadow-xl shadow-hit-blue/20' 
+              activeTab === 'diagnostics'
+              ? `bg-${theme.primary} text-white shadow-xl shadow-${theme.primary}/20`
               : 'text-gray-500 hover:bg-gray-50'
             }`}
           >
@@ -95,8 +109,8 @@ const SettingsPanel = () => {
           <button
             onClick={() => setActiveTab('notifications')}
             className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-black transition-all ${
-              activeTab === 'notifications' 
-              ? 'bg-hit-blue text-white shadow-xl shadow-hit-blue/20' 
+              activeTab === 'notifications'
+              ? `bg-${theme.primary} text-white shadow-xl shadow-${theme.primary}/20`
               : 'text-gray-500 hover:bg-gray-50'
             }`}
           >
@@ -111,6 +125,79 @@ const SettingsPanel = () => {
       {/* Main Content Area */}
       <div className="flex-1 bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col">
         
+        {/* --- APPEARANCE TAB --- */}
+        {activeTab === 'appearance' && (
+          <div className="flex flex-col h-full">
+            <div className="p-10 border-b border-gray-50 bg-gray-50/30">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                <Palette className={`text-${theme.primary}`} /> Appearance Settings
+              </h3>
+              <p className="text-gray-500 font-medium text-sm mt-1">Customize the visual appearance of the application.</p>
+            </div>
+
+            <div className="flex-1 p-10 overflow-y-auto">
+              <div className="mb-8">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Color Theme</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.values(availableThemes).map((t) => {
+                    const isSelected = themeName === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setTheme(t.id)}
+                        className={`relative p-6 rounded-2xl border-2 transition-all text-left group ${
+                          isSelected
+                            ? `border-${t.primary} bg-${t.primaryLight} shadow-lg`
+                            : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-md'
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className={`absolute top-3 right-3 w-6 h-6 bg-${t.primary} rounded-full flex items-center justify-center`}>
+                            <Check size={14} className="text-white" />
+                          </div>
+                        )}
+
+                        {/* Color swatches */}
+                        <div className="flex gap-2 mb-4">
+                          <div className={`w-8 h-8 rounded-lg bg-${t.primary}`} />
+                          <div className={`w-8 h-8 rounded-lg bg-${t.primaryLight}`} />
+                          <div className={`w-8 h-8 rounded-lg bg-${t.success}`} />
+                          <div className={`w-8 h-8 rounded-lg bg-${t.warning}`} />
+                        </div>
+
+                        <h5 className={`font-black text-gray-900 mb-1 ${isSelected ? `text-${t.primaryDark}` : ''}`}>
+                          {t.name}
+                        </h5>
+                        <p className="text-xs text-gray-400 font-medium">
+                          {t.id === 'teal' && 'Clean and professional'}
+                          {t.id === 'ocean' && 'Cool and focused'}
+                          {t.id === 'forest' && 'Natural and calming'}
+                          {t.id === 'sunset' && 'Warm and energetic'}
+                          {t.id === 'lavender' && 'Soft and elegant'}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className={`mt-10 p-8 bg-${theme.primary} rounded-3xl text-white shadow-2xl`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-black leading-tight">Current Theme: {theme.name}</h4>
+                    <p className="text-white/70 text-sm mt-1">Your preference is saved automatically.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className={`w-10 h-10 rounded-xl bg-white/20`} />
+                    <div className={`w-10 h-10 rounded-xl bg-white/30`} />
+                    <div className={`w-10 h-10 rounded-xl bg-white/40`} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* --- DIAGNOSTICS TAB --- */}
         {activeTab === 'diagnostics' && (
           <div className="flex flex-col h-full">

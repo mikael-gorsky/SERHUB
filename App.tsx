@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import {
-  Search,
-  Bell,
-  Loader2,
-  LogOut,
-  Box
-} from 'lucide-react';
-import Dashboard from './components/Dashboard';
-import TasksManager from './components/TasksManager';
-import KnowledgeVault from './components/KnowledgeVault';
-import ProjectCalendar from './components/ProjectCalendar';
-import SettingsPanel from './components/SettingsPanel';
-import TeamManager from './components/TeamManager';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Loader2, Box, LogOut, Bell } from 'lucide-react';
 import Login from './components/Login';
 import UserAvatar from './components/UserAvatar';
 import SectionTree from './components/SectionTree';
@@ -20,102 +8,94 @@ import SectionDetail from './components/SectionDetail';
 import TabNavigation, { TabType } from './components/TabNavigation';
 import TasksView from './components/TasksView';
 import MeetingsView from './components/MeetingsView';
+import TeamManager from './components/TeamManager';
+import SettingsPanel from './components/SettingsPanel';
+import AppLogo from './components/AppLogo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { Section } from './types';
 
-// --- Top Header Component ---
-const TopHeader = () => {
-  const location = useLocation();
+// --- App Header with Institution Info ---
+const AppHeader = () => {
+  const { theme } = useTheme();
   const { currentUser, signOut } = useAuth();
 
-  const navItems = [
-    { label: 'Dashboard', path: '/' },
-    { label: 'Reports', path: '/reports' },
-    { label: 'Compliance', path: '/compliance' },
-    { label: 'Settings', path: '/settings' },
-  ];
-
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path);
-  };
-
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 fixed left-0 right-0 top-0 z-50">
-      {/* Left: Logo and Search */}
+    <header className={`bg-${theme.primary} text-white px-6 py-3 shadow-lg`}>
       <div className="flex items-center gap-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center">
-            <Box size={20} className="text-white" />
-          </div>
-          <span className="font-bold text-lg text-gray-900 tracking-tight">SERHUB</span>
-        </Link>
-
-        {/* Search */}
-        <div className="relative ml-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          <input
-            type="text"
-            placeholder="Search report content..."
-            className="pl-10 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none w-64 transition-all"
-          />
+        <div className="shrink-0">
+          <AppLogo size={48} />
         </div>
-      </div>
 
-      {/* Center: Navigation */}
-      <nav className="flex items-center gap-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive(item.path)
-                ? 'text-teal-700 bg-teal-50'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+        {/* Institution Info */}
+        <div className="flex-1 min-w-0">
+          {/* Line 1: Institution hierarchy */}
+          <div className="flex items-center gap-2 text-white/80 text-xs font-medium">
+            <span className="font-bold text-white">HIT</span>
+            <span>Holon Institute of Technology</span>
+            <span className="text-white/40">/</span>
+            <span>Faculty of Science</span>
+            <span className="text-white/40">/</span>
+            <span>Department of Computer Science</span>
+          </div>
 
-      {/* Right: Actions and User */}
-      <div className="flex items-center gap-4">
-        <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-          <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+          {/* Line 2: Report Title */}
+          <h1 className="text-lg font-bold tracking-tight">
+            Self Evaluation Report
+          </h1>
 
-        <div className="h-8 w-px bg-gray-200" />
+          {/* Line 3: Academic Year */}
+          <div className="text-white/60 text-xs">
+            Academic Year 2024/2025
+          </div>
+        </div>
 
+        {/* Right side: notifications and user */}
         <div className="flex items-center gap-3">
-          <UserAvatar name={currentUser?.name} size="md" className="border-2 border-gray-100" />
-          <button
-            onClick={signOut}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Sign Out"
-          >
-            <LogOut size={18} />
+          <button className="relative p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+            <Bell size={20} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full" />
           </button>
+
+          <div className="h-8 w-px bg-white/20" />
+
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <div className="text-sm font-medium">{currentUser?.name}</div>
+              <div className="text-xs text-white/60">{currentUser?.role}</div>
+            </div>
+            <UserAvatar name={currentUser?.name} size="md" className="border-2 border-white/30" />
+            <button
+              onClick={signOut}
+              className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              title="Sign Out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </header>
   );
 };
 
-// --- Main View with Tabs (Dashboard, Tasks, Meetings, Users, Settings) ---
+// --- Main View with Tabs ---
 const MainView = () => {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className={`flex flex-col h-screen ${theme.bgPrimary}`}>
+      {/* App Header */}
+      <AppHeader />
+
       {/* Tab Navigation */}
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-hidden bg-gray-50">
+      <div className="flex-1 overflow-hidden">
         {activeTab === 'dashboard' && (
           <div className="flex h-full">
             {/* Section Tree Sidebar */}
@@ -131,13 +111,13 @@ const MainView = () => {
                 onAddTask={() => console.log('Add task to section:', selectedSection.id)}
               />
             ) : (
-              <div className="flex-1 flex items-center justify-center bg-white">
+              <div className={`flex-1 flex items-center justify-center ${theme.bgSecondary} m-4 rounded-2xl shadow-sm border border-${theme.border}`}>
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Box size={32} className="text-gray-300" />
+                  <div className={`w-16 h-16 bg-${theme.primaryLight} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                    <Box size={32} className={`text-${theme.primary}`} />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Select a Section</h3>
-                  <p className="text-sm text-gray-500">Choose a section from the tree to view its details and tasks</p>
+                  <h3 className={`text-lg font-semibold text-${theme.textPrimary} mb-2`}>Select a Section</h3>
+                  <p className={`text-sm text-${theme.textSecondary}`}>Choose a section from the tree to view its details and tasks</p>
                 </div>
               </div>
             )}
@@ -145,21 +125,25 @@ const MainView = () => {
         )}
 
         {activeTab === 'tasks' && (
-          <TasksView />
+          <div className="h-full overflow-auto">
+            <TasksView />
+          </div>
         )}
 
         {activeTab === 'meetings' && (
-          <MeetingsView />
+          <div className="h-full overflow-auto">
+            <MeetingsView />
+          </div>
         )}
 
         {activeTab === 'users' && (
-          <div className="p-6 h-full">
+          <div className="p-6 h-full overflow-auto">
             <TeamManager />
           </div>
         )}
 
         {activeTab === 'settings' && (
-          <div className="p-6 h-full">
+          <div className="p-6 h-full overflow-auto">
             <SettingsPanel />
           </div>
         )}
@@ -168,16 +152,14 @@ const MainView = () => {
   );
 };
 
-// --- Reports View (legacy alias) ---
-const ReportsView = MainView;
-
 // --- Private Route Wrapper ---
 const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
   const { currentUser, loading } = useAuth();
+  const { theme } = useTheme();
 
   if (loading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50 text-teal-600">
+      <div className={`h-screen flex flex-col items-center justify-center ${theme.bgPrimary} text-${theme.primary}`}>
         <Loader2 className="animate-spin mb-4" size={48} />
         <span className="text-sm font-semibold uppercase tracking-widest opacity-60">Loading...</span>
       </div>
@@ -191,55 +173,23 @@ const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// --- Page Wrapper ---
-const PageWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="mt-16 p-8 min-h-[calc(100vh-64px)] bg-gray-50">
-    {children}
-  </div>
-);
-
-// --- Simple Layout (no header) ---
-const SimpleLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-gray-50 p-8">
-    {children}
-  </div>
-);
-
 // --- Main App Component ---
 const App = () => {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-
-          {/* Main page - Section tree layout (mockup design) */}
-          <Route path="/" element={
-            <PrivateRoute>
-              <ReportsView />
-            </PrivateRoute>
-          } />
-          <Route path="/section/:sectionId" element={
-            <PrivateRoute>
-              <ReportsView />
-            </PrivateRoute>
-          } />
-
-          {/* Other pages - Simple layout (no top header) */}
-          <Route path="/dashboard" element={<PrivateRoute><SimpleLayout><Dashboard /></SimpleLayout></PrivateRoute>} />
-          <Route path="/compliance" element={<PrivateRoute><SimpleLayout><TasksManager /></SimpleLayout></PrivateRoute>} />
-          <Route path="/tasks" element={<PrivateRoute><SimpleLayout><TasksManager /></SimpleLayout></PrivateRoute>} />
-          <Route path="/calendar" element={<PrivateRoute><SimpleLayout><ProjectCalendar /></SimpleLayout></PrivateRoute>} />
-          <Route path="/knowledge" element={<PrivateRoute><SimpleLayout><KnowledgeVault /></SimpleLayout></PrivateRoute>} />
-          <Route path="/team" element={<PrivateRoute><SimpleLayout><TeamManager /></SimpleLayout></PrivateRoute>} />
-          <Route path="/settings" element={<PrivateRoute><SimpleLayout><SettingsPanel /></SimpleLayout></PrivateRoute>} />
-          <Route path="/help" element={<PrivateRoute><SimpleLayout><div className="text-center py-20 text-gray-500">Help Center coming soon</div></SimpleLayout></PrivateRoute>} />
-
-          {/* Catch-all redirect to main */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </HashRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/*" element={
+              <PrivateRoute>
+                <MainView />
+              </PrivateRoute>
+            } />
+          </Routes>
+        </HashRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
