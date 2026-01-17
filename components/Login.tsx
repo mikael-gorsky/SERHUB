@@ -121,7 +121,7 @@ const Login = () => {
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-hit-blue transition-colors z-10">
                   <UserCheck size={20} />
                 </div>
-                <select 
+                <select
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loadingUsers}
@@ -134,7 +134,6 @@ const Login = () => {
                       {user.name} — {user.role}
                     </option>
                   ))}
-                  <option value="mikaelg@hit.ac.il">Mikael Gorsky (Admin)</option>
                 </select>
                 <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
               </div>
