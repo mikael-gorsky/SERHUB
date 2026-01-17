@@ -3,6 +3,7 @@ import { supabase, isConfigured } from '../lib/supabase';
 
 export const OrgTaskService = {
   getAll: async (): Promise<OrgTask[]> => {
+    console.log('OrgTaskService.getAll called, isConfigured:', isConfigured, 'supabase:', !!supabase);
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
@@ -14,6 +15,7 @@ export const OrgTaskService = {
         supervisor:serhub_profiles!supervisor_id(id, first_name, last_name, title, avatar_url)
       `)
       .order('due_date');
+    console.log('OrgTaskService.getAll result:', { count: data?.length, error });
     if (error) throw error;
     return data || [];
   },

@@ -19,6 +19,7 @@ import { supabase, isConfigured } from '../lib/supabase';
 
 export const TaskService = {
   getAll: async (): Promise<Task[]> => {
+    console.log('TaskService.getAll called, isConfigured:', isConfigured, 'supabase:', !!supabase);
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
@@ -31,6 +32,7 @@ export const TaskService = {
         section:serhub_sections!section_id(id, number, title)
       `)
       .order('due_date');
+    console.log('TaskService.getAll result:', { count: data?.length, error });
     if (error) throw error;
     return data || [];
   },

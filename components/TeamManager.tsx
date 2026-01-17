@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { UserService } from '../services/UserService';
 import { useAuth } from '../contexts/AuthContext';
-import { User, UserRole } from '../types';
+import { User, UserRole, SystemRole } from '../types';
 import UserAvatar from './UserAvatar';
 
 const TeamManager = () => {
@@ -37,7 +37,7 @@ const TeamManager = () => {
 
   const fetchUsers = async () => {
     try {
-      const data = await UserService.getAll();
+      const data = await UserService.getAllAsUsers();
       setUsers(data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -79,18 +79,18 @@ const TeamManager = () => {
       return;
     }
 
-    if (!window.confirm(`Action Required: Are you sure you want to PERMANENTLY remove ${userToDelete.name} from the SER HUB team? This will revoke all project access.`)) return;
-    
+    if (!window.confirm(`Action Required: Are you sure you want to deactivate ${userToDelete.name}? This will revoke all project access.`)) return;
+
     try {
-      await UserService.deleteUser(userId);
+      await UserService.deactivateUser(userId);
       // Immediately update UI state for responsive feel
       setUsers(prevUsers => prevUsers.filter(u => u.id !== userId));
-      console.log(`Successfully removed user: ${userId}`);
+      console.log(`Successfully deactivated user: ${userId}`);
     } catch (error: any) {
-      console.error("Delete operation failed:", error);
-      const errorMessage = error.message?.includes('permission-denied') 
-        ? "Access Denied: Your account does not have permission to delete this record."
-        : "System Error: Failed to process deletion. Please refresh and try again.";
+      console.error("Deactivate operation failed:", error);
+      const errorMessage = error.message?.includes('permission-denied')
+        ? "Access Denied: Your account does not have permission to modify this record."
+        : "System Error: Failed to process deactivation. Please refresh and try again.";
       alert(errorMessage);
     }
   };
@@ -100,20 +100,13 @@ const TeamManager = () => {
     setIsSaving(true);
     try {
       if (formMode === 'create') {
-        const newUser: Omit<User, 'id'> = {
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-          avatar: `https://ui-avatars.com/api/?name=${formData.name}&background=random`
-        };
-        await UserService.createUser(newUser);
+        // User creation requires authentication signup
+        alert("New users must register through the login page. You can then adjust their role here.");
+        setIsModalOpen(false);
+        return;
       } else if (formMode === 'edit' && selectedUser) {
-        await UserService.updateUser({
-          ...selectedUser,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role
-        });
+        // Update user's system role
+        await UserService.updateSystemRole(selectedUser.id, formData.role);
       }
       setIsModalOpen(false);
       fetchUsers();
@@ -136,7 +129,7 @@ const TeamManager = () => {
     return (
       <div className="flex h-full items-center justify-center text-hit-blue">
         <Loader2 className="animate-spin mr-2" />
-        <span>Loading Team Directory...</span>
+        <span>Loading User Directory...</span>
       </div>
     );
   }
@@ -149,7 +142,7 @@ const TeamManager = () => {
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Users className="text-hit-blue" /> Team Directory
+              <Users className="text-hit-blue" /> User Directory
             </h2>
             <p className="text-sm text-gray-500 mt-1">Manage institutional access and project roles.</p>
           </div>

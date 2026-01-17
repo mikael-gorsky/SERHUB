@@ -22,6 +22,7 @@ export const profileToUser = (profile: Profile): User => ({
 
 export const UserService = {
   getAll: async (): Promise<Profile[]> => {
+    console.log('UserService.getAll called, isConfigured:', isConfigured, 'supabase:', !!supabase);
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
@@ -30,6 +31,7 @@ export const UserService = {
       .select('*')
       .eq('is_active', true)
       .order('last_name');
+    console.log('UserService.getAll result:', { count: data?.length, error });
     if (error) throw error;
     return data || [];
   },

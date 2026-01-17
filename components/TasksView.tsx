@@ -40,12 +40,28 @@ const TasksView = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [orgData, reportData, sectionsData, usersData] = await Promise.all([
+      // Fetch each independently to prevent one failure from breaking all
+      const [orgResult, reportResult, sectionsResult, usersResult] = await Promise.allSettled([
         OrgTaskService.getAll(),
         TaskService.getAll(),
         SectionService.getAll(),
-        UserService.getAll()
+        UserService.getAllAsUsers()
       ]);
+
+      const orgData = orgResult.status === 'fulfilled' ? orgResult.value : [];
+      const reportData = reportResult.status === 'fulfilled' ? reportResult.value : [];
+      const sectionsData = sectionsResult.status === 'fulfilled' ? sectionsResult.value : [];
+      const usersData = usersResult.status === 'fulfilled' ? usersResult.value : [];
+
+      console.log('TasksView fetchData results:', {
+        orgTasks: orgData.length,
+        reportTasks: reportData.length,
+        sections: sectionsData.length,
+        users: usersData.length,
+        orgError: orgResult.status === 'rejected' ? orgResult.reason : null,
+        reportError: reportResult.status === 'rejected' ? reportResult.reason : null
+      });
+
       setOrgTasks(orgData);
       setReportTasks(reportData);
       setSections(sectionsData);
