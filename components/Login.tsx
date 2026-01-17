@@ -28,7 +28,7 @@ const Login = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const users = await UserService.getAll();
+        const users = await UserService.getAllAsUsers();
         setAvailableUsers(users);
       } catch (err) {
         console.warn("Could not fetch user list for dropdown.");
