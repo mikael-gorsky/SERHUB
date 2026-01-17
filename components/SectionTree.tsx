@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FileText, Globe, ChevronRight, Menu, X, LayoutDashboard, CheckSquare, Calendar, Users, Settings, HelpCircle } from 'lucide-react';
+import { Folder, FileText, Globe, ChevronRight, X, LayoutDashboard, CheckSquare, Calendar, Users, Settings, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Section } from '../types';
 import { getSectionsHierarchy, getSectionProgress } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import AppLogo from './AppLogo';
 
 interface SectionTreeProps {
   selectedSectionId: string | null;
@@ -163,7 +164,10 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
           <div className="w-72 bg-white shadow-2xl flex flex-col h-full">
             {/* Menu Header */}
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <span className="font-bold text-lg text-teal-700">SERHUB</span>
+              <div className="flex items-center gap-3">
+                <AppLogo size={36} />
+                <span className="font-bold text-lg text-teal-700">SERHUB</span>
+              </div>
               <button onClick={() => setMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                 <X size={20} className="text-gray-500" />
               </button>
@@ -216,12 +220,12 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
       <div className="w-[40%] min-w-[360px] bg-gray-50 border-r border-gray-200 flex flex-col h-full">
         {/* Institutional Header */}
         <div className="p-5 border-b border-gray-200">
-          {/* Hamburger Button */}
+          {/* App Logo Button */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="mb-4 p-2 -ml-2 hover:bg-gray-200 rounded-lg transition-colors"
+            className="mb-4 -ml-1 hover:opacity-80 transition-opacity"
           >
-            <Menu size={22} className="text-gray-600" />
+            <AppLogo size={36} />
           </button>
 
           {/* Institution Info */}
