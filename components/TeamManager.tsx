@@ -17,6 +17,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { User, UserRole, SystemRole } from '../types';
 import UserAvatar from './UserAvatar';
 
+// Display labels for roles
+const roleLabels: Record<SystemRole, string> = {
+  admin: 'Admin',
+  coordinator: 'Coordinator',
+  member: 'Team Member'
+};
+
 const TeamManager = () => {
   const { currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -30,7 +37,7 @@ const TeamManager = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: UserRole.TEAM_MEMBER as UserRole
+    role: 'member' as SystemRole
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -69,7 +76,7 @@ const TeamManager = () => {
     setFormData({
       name: '',
       email: '',
-      role: UserRole.TEAM_MEMBER
+      role: 'member'
     });
     setIsModalOpen(true);
   };
@@ -125,7 +132,7 @@ const TeamManager = () => {
     (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const canManage = currentUser?.role === UserRole.COORDINATOR || currentUser?.role === UserRole.ADMIN;
+  const canManage = currentUser?.role === 'coordinator' || currentUser?.role === 'admin';
 
   if (loading) {
     return (
@@ -198,13 +205,12 @@ const TeamManager = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
-                      user.role === UserRole.ADMIN ? 'bg-red-50 text-red-700 border-red-200' :
-                      user.role === UserRole.COORDINATOR ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                      user.role === UserRole.SUPERVISOR ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      user.role === 'admin' ? 'bg-red-50 text-red-700 border-red-200' :
+                      user.role === 'coordinator' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                       'bg-blue-50 text-blue-700 border-blue-200'
                     }`}>
-                      {(user.role === UserRole.COORDINATOR || user.role === UserRole.ADMIN) && <Shield size={10} />}
-                      {user.role}
+                      {(user.role === 'coordinator' || user.role === 'admin') && <Shield size={10} />}
+                      {roleLabels[user.role] || user.role}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -255,12 +261,22 @@ const TeamManager = () => {
           <h3 className="font-black text-gray-800 mb-6 uppercase tracking-tight">Team Structure</h3>
           
           <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
+              <div className="flex items-center gap-3">
+                <div className="bg-white p-2.5 rounded-xl text-red-600 shadow-sm"><Shield size={18} /></div>
+                <div>
+                  <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Admins</p>
+                  <p className="text-xl font-black text-red-900">{users.filter(u => u.role === 'admin').length}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between p-4 bg-purple-50 rounded-2xl border border-purple-100">
               <div className="flex items-center gap-3">
                 <div className="bg-white p-2.5 rounded-xl text-purple-600 shadow-sm"><Shield size={18} /></div>
                 <div>
                   <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest">Coordinators</p>
-                  <p className="text-xl font-black text-purple-900">{users.filter(u => u.role === UserRole.COORDINATOR).length}</p>
+                  <p className="text-xl font-black text-purple-900">{users.filter(u => u.role === 'coordinator').length}</p>
                 </div>
               </div>
             </div>
@@ -270,17 +286,7 @@ const TeamManager = () => {
                 <div className="bg-white p-2.5 rounded-xl text-blue-600 shadow-sm"><Users size={18} /></div>
                 <div>
                   <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Team Members</p>
-                  <p className="text-xl font-black text-blue-900">{users.filter(u => u.role === UserRole.TEAM_MEMBER).length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-2.5 rounded-xl text-red-600 shadow-sm"><Shield size={18} /></div>
-                <div>
-                  <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Admins</p>
-                  <p className="text-xl font-black text-red-900">{users.filter(u => u.role === UserRole.ADMIN).length}</p>
+                  <p className="text-xl font-black text-blue-900">{users.filter(u => u.role === 'member').length}</p>
                 </div>
               </div>
             </div>
@@ -335,14 +341,14 @@ const TeamManager = () => {
 
                       <div>
                           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Project Role</label>
-                          <select 
+                          <select
                               value={formData.role}
-                              onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
+                              onChange={e => setFormData({...formData, role: e.target.value as SystemRole})}
                               className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-hit-blue transition-all cursor-pointer"
                           >
-                              {Object.values(UserRole).map(role => (
-                                  <option key={role} value={role}>{role}</option>
-                              ))}
+                              <option value="admin">Admin</option>
+                              <option value="coordinator">Coordinator</option>
+                              <option value="member">Team Member</option>
                           </select>
                       </div>
 
