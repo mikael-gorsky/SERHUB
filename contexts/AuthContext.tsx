@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       last_name: 'Gorsky',
       title: 'Dr.',
       organization_role: 'department_faculty',
-      system_role: 'admin',
+      system_role: 'admin',  // admin | supervisor | collaborator
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

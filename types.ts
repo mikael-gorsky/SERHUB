@@ -4,17 +4,7 @@
 // USER & PROFILE TYPES
 // ============================================
 
-export type SystemRole = 'admin' | 'coordinator' | 'member';
-
-// Backward compatibility - alias for components still using UserRole
-export const UserRole = {
-  ADMIN: 'admin' as SystemRole,
-  COORDINATOR: 'coordinator' as SystemRole,
-  MEMBER: 'member' as SystemRole,
-  // Legacy mappings
-  SUPERVISOR: 'coordinator' as SystemRole,
-  TEAM_MEMBER: 'member' as SystemRole
-};
+export type SystemRole = 'admin' | 'supervisor' | 'collaborator';
 
 export type OrganizationRole =
   | 'institution_management'

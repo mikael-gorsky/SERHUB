@@ -14,14 +14,14 @@ import {
 } from 'lucide-react';
 import { UserService } from '../services/UserService';
 import { useAuth } from '../contexts/AuthContext';
-import { User, UserRole, SystemRole } from '../types';
+import { User, SystemRole } from '../types';
 import UserAvatar from './UserAvatar';
 
 // Display labels for roles
 const roleLabels: Record<SystemRole, string> = {
   admin: 'Admin',
-  coordinator: 'Coordinator',
-  member: 'Team Member'
+  supervisor: 'Supervisor',
+  collaborator: 'Collaborator'
 };
 
 const TeamManager = () => {
@@ -37,7 +37,7 @@ const TeamManager = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'member' as SystemRole
+    role: 'collaborator' as SystemRole
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -76,7 +76,7 @@ const TeamManager = () => {
     setFormData({
       name: '',
       email: '',
-      role: 'member'
+      role: 'collaborator'
     });
     setIsModalOpen(true);
   };
@@ -132,7 +132,7 @@ const TeamManager = () => {
     (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const canManage = currentUser?.role === 'coordinator' || currentUser?.role === 'admin';
+  const canManage = currentUser?.role === 'supervisor' || currentUser?.role === 'admin';
 
   if (loading) {
     return (
@@ -206,10 +206,10 @@ const TeamManager = () => {
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
                       user.role === 'admin' ? 'bg-red-50 text-red-700 border-red-200' :
-                      user.role === 'coordinator' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      user.role === 'supervisor' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                       'bg-blue-50 text-blue-700 border-blue-200'
                     }`}>
-                      {(user.role === 'coordinator' || user.role === 'admin') && <Shield size={10} />}
+                      {(user.role === 'supervisor' || user.role === 'admin') && <Shield size={10} />}
                       {roleLabels[user.role] || user.role}
                     </span>
                   </td>
@@ -275,8 +275,8 @@ const TeamManager = () => {
               <div className="flex items-center gap-3">
                 <div className="bg-white p-2.5 rounded-xl text-purple-600 shadow-sm"><Shield size={18} /></div>
                 <div>
-                  <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest">Coordinators</p>
-                  <p className="text-xl font-black text-purple-900">{users.filter(u => u.role === 'coordinator').length}</p>
+                  <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest">Supervisors</p>
+                  <p className="text-xl font-black text-purple-900">{users.filter(u => u.role === 'supervisor').length}</p>
                 </div>
               </div>
             </div>
@@ -285,8 +285,8 @@ const TeamManager = () => {
               <div className="flex items-center gap-3">
                 <div className="bg-white p-2.5 rounded-xl text-blue-600 shadow-sm"><Users size={18} /></div>
                 <div>
-                  <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Team Members</p>
-                  <p className="text-xl font-black text-blue-900">{users.filter(u => u.role === 'member').length}</p>
+                  <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Collaborators</p>
+                  <p className="text-xl font-black text-blue-900">{users.filter(u => u.role === 'collaborator').length}</p>
                 </div>
               </div>
             </div>
@@ -347,8 +347,8 @@ const TeamManager = () => {
                               className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-hit-blue transition-all cursor-pointer"
                           >
                               <option value="admin">Admin</option>
-                              <option value="coordinator">Coordinator</option>
-                              <option value="member">Team Member</option>
+                              <option value="supervisor">Supervisor</option>
+                              <option value="collaborator">Collaborator</option>
                           </select>
                       </div>
 
