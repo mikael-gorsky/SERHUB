@@ -101,11 +101,21 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
 // --- SECTION FUNCTIONS ---
 
 export const getSections = async (): Promise<Section[]> => {
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  console.log('getSections called, supabase configured:', !!supabase);
+  if (!supabase) {
+    console.error('Supabase not configured!');
+    return [];
+  }
+
+  // Check auth state
+  const { data: authData } = await supabase.auth.getSession();
+  console.log('Auth session:', authData?.session ? 'logged in' : 'not logged in');
+
+  const { data, error, status } = await supabase
     .from('serhub_sections')
     .select('*')
     .order('sort_order');
+  console.log('getSections result:', { count: data?.length, error, status });
   if (error) {
     console.error('Error fetching sections:', error);
     return [];
@@ -115,10 +125,15 @@ export const getSections = async (): Promise<Section[]> => {
 
 export const getSectionsHierarchy = async (): Promise<Section[]> => {
   const sections = await getSections();
-  // Build hierarchy
-  const level1 = sections.filter(s => s.level === 1);
-  const level2 = sections.filter(s => s.level === 2);
-  const level3 = sections.filter(s => s.level === 3);
+  console.log('Building hierarchy from', sections.length, 'sections');
+  console.log('Sample section:', sections[0]);
+
+  // Build hierarchy - use == for loose comparison in case level is string
+  const level1 = sections.filter(s => Number(s.level) === 1);
+  const level2 = sections.filter(s => Number(s.level) === 2);
+  const level3 = sections.filter(s => Number(s.level) === 3);
+
+  console.log('Level counts:', { level1: level1.length, level2: level2.length, level3: level3.length });
 
   // Attach level 3 to level 2
   level2.forEach(s2 => {
@@ -164,7 +179,7 @@ export const getTasks = async (): Promise<Task[]> => {
     .select(`
       *,
       owner:serhub_profiles!owner_id(*),
-      reviewer:serhub_profiles!reviewer_id(*),
+      supervisor:serhub_profiles!supervisor_id(*),
       section:serhub_sections!section_id(id, number, title)
     `)
     .order('due_date');
@@ -182,7 +197,7 @@ export const getTasksBySection = async (sectionId: string): Promise<Task[]> => {
     .select(`
       *,
       owner:serhub_profiles!owner_id(*),
-      reviewer:serhub_profiles!reviewer_id(*)
+      supervisor:serhub_profiles!supervisor_id(*)
     `)
     .eq('section_id', sectionId)
     .order('due_date');
@@ -201,7 +216,7 @@ export const getTasksByUser = async (userId: string): Promise<Task[]> => {
       *,
       section:serhub_sections!section_id(id, number, title)
     `)
-    .or(`owner_id.eq.${userId},reviewer_id.eq.${userId},approver_id.eq.${userId}`)
+    .or(`owner_id.eq.${userId},supervisor_id.eq.${userId}`)
     .order('due_date');
   if (error) {
     console.error('Error fetching user tasks:', error);

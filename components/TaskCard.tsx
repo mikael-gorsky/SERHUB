@@ -62,9 +62,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         {/* Header row */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h4 className="text-base font-semibold text-gray-900 mb-2">
+            <h4 className="text-base font-semibold text-gray-900 mb-1">
               {task.title}
             </h4>
+
+            {task.description && (
+              <p className="text-sm text-gray-500 mb-2 line-clamp-2">
+                {task.description}
+              </p>
+            )}
 
             <div className="flex items-center gap-4 text-sm">
               {/* Due date */}

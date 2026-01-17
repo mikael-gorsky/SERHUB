@@ -81,8 +81,7 @@ export interface Task {
   description?: string;
   section_id: string;
   owner_id: string;
-  reviewer_id?: string;
-  approver_id?: string;
+  supervisor_id?: string;
   status: number; // 0-100 progress percentage
   blocked: boolean;
   blocked_reason?: string;
@@ -92,8 +91,7 @@ export interface Task {
   updated_at: string;
   // Joined data
   owner?: Profile;
-  reviewer?: Profile;
-  approver?: Profile;
+  supervisor?: Profile;
   section?: Section;
   collaborators?: Profile[];
   dependencies?: Task[];
@@ -178,7 +176,7 @@ export interface NotificationPreferences {
 export interface UserTaskStats {
   owned_tasks: number;
   collaborating_tasks: number;
-  reviewing_tasks: number;
+  supervising_tasks: number;
   overdue_tasks: number;
   completed_tasks: number;
 }

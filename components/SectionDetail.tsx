@@ -52,7 +52,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
 
   return (
     <div className="flex-1 bg-white overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-3xl p-8">
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
           <div className="flex-1">

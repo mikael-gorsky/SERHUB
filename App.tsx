@@ -161,11 +161,10 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// --- Layout with Header (for non-reports pages) ---
-const MainLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-gray-50">
-    <TopHeader />
-    <PageWrapper>{children}</PageWrapper>
+// --- Simple Layout (no header) ---
+const SimpleLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-gray-50 p-8">
+    {children}
   </div>
 );
 
@@ -177,32 +176,30 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
 
-          {/* Reports - Full page layout without header */}
-          <Route path="/reports" element={
+          {/* Main page - Section tree layout (mockup design) */}
+          <Route path="/" element={
             <PrivateRoute>
               <ReportsView />
             </PrivateRoute>
           } />
-          <Route path="/reports/:sectionId" element={
+          <Route path="/section/:sectionId" element={
             <PrivateRoute>
               <ReportsView />
             </PrivateRoute>
           } />
 
-          {/* Other pages - With header */}
-          <Route path="/*" element={
-            <PrivateRoute>
-              <Routes>
-                <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
-                <Route path="/compliance" element={<MainLayout><TasksManager /></MainLayout>} />
-                <Route path="/tasks" element={<MainLayout><TasksManager /></MainLayout>} />
-                <Route path="/calendar" element={<MainLayout><ProjectCalendar /></MainLayout>} />
-                <Route path="/knowledge" element={<MainLayout><KnowledgeVault /></MainLayout>} />
-                <Route path="/team" element={<MainLayout><TeamManager /></MainLayout>} />
-                <Route path="/settings" element={<MainLayout><SettingsPanel /></MainLayout>} />
-              </Routes>
-            </PrivateRoute>
-          } />
+          {/* Other pages - Simple layout (no top header) */}
+          <Route path="/dashboard" element={<PrivateRoute><SimpleLayout><Dashboard /></SimpleLayout></PrivateRoute>} />
+          <Route path="/compliance" element={<PrivateRoute><SimpleLayout><TasksManager /></SimpleLayout></PrivateRoute>} />
+          <Route path="/tasks" element={<PrivateRoute><SimpleLayout><TasksManager /></SimpleLayout></PrivateRoute>} />
+          <Route path="/calendar" element={<PrivateRoute><SimpleLayout><ProjectCalendar /></SimpleLayout></PrivateRoute>} />
+          <Route path="/knowledge" element={<PrivateRoute><SimpleLayout><KnowledgeVault /></SimpleLayout></PrivateRoute>} />
+          <Route path="/team" element={<PrivateRoute><SimpleLayout><TeamManager /></SimpleLayout></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><SimpleLayout><SettingsPanel /></SimpleLayout></PrivateRoute>} />
+          <Route path="/help" element={<PrivateRoute><SimpleLayout><div className="text-center py-20 text-gray-500">Help Center coming soon</div></SimpleLayout></PrivateRoute>} />
+
+          {/* Catch-all redirect to main */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </HashRouter>
     </AuthProvider>
