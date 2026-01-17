@@ -11,7 +11,7 @@ interface TabNavigationProps {
 const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={18} /> },
-  { id: 'meetings', label: 'Meetings', icon: <Calendar size={18} /> },
+  { id: 'meetings', label: 'Calendar', icon: <Calendar size={18} /> },
   { id: 'users', label: 'Users', icon: <Users size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ];

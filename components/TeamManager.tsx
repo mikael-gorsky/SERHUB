@@ -36,11 +36,13 @@ const TeamManager = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchUsers = async () => {
+    console.log('TeamManager: fetchUsers started');
     try {
       const data = await UserService.getAllAsUsers();
+      console.log('TeamManager: fetchUsers got data:', data?.length, 'users', data);
       setUsers(data);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("TeamManager: Error fetching users:", error);
     } finally {
       setLoading(false);
     }
