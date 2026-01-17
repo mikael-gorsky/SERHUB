@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Search, 
-  Shield, 
-  Mail, 
+import {
+  Users,
+  Search,
+  Shield,
+  Mail,
   User as UserIcon,
   Loader2,
   Plus,
@@ -13,20 +13,32 @@ import {
   Check
 } from 'lucide-react';
 import { UserService } from '../services/UserService';
+import { RoleService, Role } from '../services/RoleService';
 import { useAuth } from '../contexts/AuthContext';
-import { User, SystemRole } from '../types';
+import { User } from '../types';
 import UserAvatar from './UserAvatar';
 
-// Display labels for roles
-const roleLabels: Record<SystemRole, string> = {
-  admin: 'Admin',
-  supervisor: 'Supervisor',
-  collaborator: 'Collaborator'
+// Color mappings for role badges
+const roleColors: Record<string, string> = {
+  red: 'bg-red-50 text-red-700 border-red-200',
+  purple: 'bg-purple-50 text-purple-700 border-purple-200',
+  blue: 'bg-blue-50 text-blue-700 border-blue-200',
+  green: 'bg-green-50 text-green-700 border-green-200',
+  amber: 'bg-amber-50 text-amber-700 border-amber-200'
+};
+
+const statColors: Record<string, { bg: string; border: string; text: string; icon: string }> = {
+  red: { bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-600', icon: 'text-red-600' },
+  purple: { bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-600', icon: 'text-purple-600' },
+  blue: { bg: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-600', icon: 'text-blue-600' },
+  green: { bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-600', icon: 'text-green-600' },
+  amber: { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-600', icon: 'text-amber-600' }
 };
 
 const TeamManager = () => {
   const { currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -37,27 +49,37 @@ const TeamManager = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'collaborator' as SystemRole
+    role: ''
   });
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchUsers = async () => {
-    console.log('TeamManager: fetchUsers started');
+  const fetchData = async () => {
     try {
-      const data = await UserService.getAllAsUsers();
-      console.log('TeamManager: fetchUsers got data:', data?.length, 'users', data);
-      setUsers(data);
+      const [usersData, rolesData] = await Promise.all([
+        UserService.getAllAsUsers(),
+        RoleService.getAll()
+      ]);
+      setUsers(usersData);
+      setRoles(rolesData);
+      // Set default role to last role (lowest privilege)
+      if (rolesData.length > 0) {
+        setFormData(prev => ({ ...prev, role: rolesData[rolesData.length - 1].id }));
+      }
     } catch (error) {
-      console.error("TeamManager: Error fetching users:", error);
+      console.error("TeamManager: Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
+
+  // Helper to get role info
+  const getRole = (roleId: string): Role | undefined => roles.find(r => r.id === roleId);
+  const canManage = roles.find(r => r.id === currentUser?.role)?.can_manage || false;
 
   const handleEditClick = (user: User) => {
     setFormMode('edit');
@@ -76,7 +98,7 @@ const TeamManager = () => {
     setFormData({
       name: '',
       email: '',
-      role: 'collaborator'
+      role: roles.length > 0 ? roles[roles.length - 1].id : ''
     });
     setIsModalOpen(true);
   };
@@ -127,12 +149,10 @@ const TeamManager = () => {
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredUsers = users.filter(u =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const canManage = currentUser?.role === 'supervisor' || currentUser?.role === 'admin';
 
   if (loading) {
     return (
@@ -204,14 +224,16 @@ const TeamManager = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
-                      user.role === 'admin' ? 'bg-red-50 text-red-700 border-red-200' :
-                      user.role === 'supervisor' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                      'bg-blue-50 text-blue-700 border-blue-200'
-                    }`}>
-                      {(user.role === 'supervisor' || user.role === 'admin') && <Shield size={10} />}
-                      {roleLabels[user.role] || user.role}
-                    </span>
+                    {(() => {
+                      const role = getRole(user.role);
+                      const colorClass = roleColors[role?.color || 'blue'] || roleColors.blue;
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${colorClass}`}>
+                          {role?.can_manage && <Shield size={10} />}
+                          {role?.label || user.role}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4">
                     <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-green-600">
@@ -261,35 +283,23 @@ const TeamManager = () => {
           <h3 className="font-black text-gray-800 mb-6 uppercase tracking-tight">Team Structure</h3>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-2.5 rounded-xl text-red-600 shadow-sm"><Shield size={18} /></div>
-                <div>
-                  <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Admins</p>
-                  <p className="text-xl font-black text-red-900">{users.filter(u => u.role === 'admin').length}</p>
+            {roles.map(role => {
+              const colors = statColors[role.color] || statColors.blue;
+              const count = users.filter(u => u.role === role.id).length;
+              return (
+                <div key={role.id} className={`flex items-center justify-between p-4 ${colors.bg} rounded-2xl border ${colors.border}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`bg-white p-2.5 rounded-xl ${colors.icon} shadow-sm`}>
+                      {role.can_manage ? <Shield size={18} /> : <Users size={18} />}
+                    </div>
+                    <div>
+                      <p className={`text-[10px] ${colors.text} font-black uppercase tracking-widest`}>{role.label}s</p>
+                      <p className={`text-xl font-black ${colors.text.replace('600', '900')}`}>{count}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-purple-50 rounded-2xl border border-purple-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-2.5 rounded-xl text-purple-600 shadow-sm"><Shield size={18} /></div>
-                <div>
-                  <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest">Supervisors</p>
-                  <p className="text-xl font-black text-purple-900">{users.filter(u => u.role === 'supervisor').length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-2.5 rounded-xl text-blue-600 shadow-sm"><Users size={18} /></div>
-                <div>
-                  <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Collaborators</p>
-                  <p className="text-xl font-black text-blue-900">{users.filter(u => u.role === 'collaborator').length}</p>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-100">
@@ -343,12 +353,12 @@ const TeamManager = () => {
                           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Project Role</label>
                           <select
                               value={formData.role}
-                              onChange={e => setFormData({...formData, role: e.target.value as SystemRole})}
+                              onChange={e => setFormData({...formData, role: e.target.value})}
                               className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-hit-blue transition-all cursor-pointer"
                           >
-                              <option value="admin">Admin</option>
-                              <option value="supervisor">Supervisor</option>
-                              <option value="collaborator">Collaborator</option>
+                              {roles.map(role => (
+                                <option key={role.id} value={role.id}>{role.label}</option>
+                              ))}
                           </select>
                       </div>
 
