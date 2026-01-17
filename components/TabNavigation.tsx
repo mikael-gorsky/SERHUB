@@ -1,0 +1,42 @@
+import React from 'react';
+import { FileText, Briefcase, Calendar } from 'lucide-react';
+
+export type TabType = 'report' | 'org-tasks' | 'meetings';
+
+interface TabNavigationProps {
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+}
+
+const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+  { id: 'report', label: 'Report', icon: <FileText size={18} /> },
+  { id: 'org-tasks', label: 'Org Tasks', icon: <Briefcase size={18} /> },
+  { id: 'meetings', label: 'Meetings', icon: <Calendar size={18} /> },
+];
+
+const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange }) => {
+  return (
+    <div className="bg-white border-b border-gray-200 px-4">
+      <nav className="flex space-x-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`
+              flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors
+              ${activeTab === tab.id
+                ? 'border-teal-600 text-teal-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }
+            `}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+};
+
+export default TabNavigation;

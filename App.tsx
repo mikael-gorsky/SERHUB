@@ -17,6 +17,9 @@ import Login from './components/Login';
 import UserAvatar from './components/UserAvatar';
 import SectionTree from './components/SectionTree';
 import SectionDetail from './components/SectionDetail';
+import TabNavigation, { TabType } from './components/TabNavigation';
+import OrgTasksManager from './components/OrgTasksManager';
+import MeetingsManager from './components/MeetingsManager';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Section } from './types';
 
@@ -101,38 +104,60 @@ const TopHeader = () => {
   );
 };
 
-// --- Reports View (Section Tree + Detail) - Full page without header ---
-const ReportsView = () => {
+// --- Main View with Tabs (Report, Org Tasks, Meetings) ---
+const MainView = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('report');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
   return (
-    <div className="flex h-screen">
-      {/* Section Tree Sidebar */}
-      <SectionTree
-        selectedSectionId={selectedSection?.id || null}
-        onSelectSection={setSelectedSection}
-      />
+    <div className="flex flex-col h-screen">
+      {/* Tab Navigation */}
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Main Content */}
-      {selectedSection ? (
-        <SectionDetail
-          section={selectedSection}
-          onAddTask={() => console.log('Add task to section:', selectedSection.id)}
-        />
-      ) : (
-        <div className="flex-1 flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Box size={32} className="text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Select a Section</h3>
-            <p className="text-sm text-gray-500">Choose a section from the tree to view its details and tasks</p>
+      {/* Tab Content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'report' && (
+          <div className="flex h-full">
+            {/* Section Tree Sidebar */}
+            <SectionTree
+              selectedSectionId={selectedSection?.id || null}
+              onSelectSection={setSelectedSection}
+            />
+
+            {/* Main Content */}
+            {selectedSection ? (
+              <SectionDetail
+                section={selectedSection}
+                onAddTask={() => console.log('Add task to section:', selectedSection.id)}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center bg-white">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Box size={32} className="text-gray-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">Select a Section</h3>
+                  <p className="text-sm text-gray-500">Choose a section from the tree to view its details and tasks</p>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {activeTab === 'org-tasks' && (
+          <OrgTasksManager />
+        )}
+
+        {activeTab === 'meetings' && (
+          <MeetingsManager />
+        )}
+      </div>
     </div>
   );
 };
+
+// --- Reports View (legacy alias) ---
+const ReportsView = MainView;
 
 // --- Private Route Wrapper ---
 const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
