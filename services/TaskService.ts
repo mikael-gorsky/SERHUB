@@ -28,7 +28,7 @@ export const TaskService = {
       .select(`
         *,
         owner:serhub_profiles!owner_id(id, first_name, last_name, title),
-        reviewer:serhub_profiles!reviewer_id(id, first_name, last_name, title),
+        supervisor:serhub_profiles!supervisor_id(id, first_name, last_name, title),
         section:serhub_sections!section_id(id, number, title)
       `)
       .order('due_date');
