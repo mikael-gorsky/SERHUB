@@ -12,9 +12,7 @@ import { supabase, isConfigured } from '../lib/supabase';
 // Helper to convert Profile to User display object
 export const profileToUser = (profile: Profile): User => ({
   id: profile.id,
-  name: profile.title
-    ? `${profile.title} ${profile.first_name} ${profile.last_name}`
-    : `${profile.first_name} ${profile.last_name}`,
+  name: `${profile.first_name} ${profile.last_name}`,
   email: profile.email,
   role: profile.system_role,
   avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.first_name + ' ' + profile.last_name)}&background=005695&color=fff`
