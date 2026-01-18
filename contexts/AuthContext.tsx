@@ -38,83 +38,98 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for guest mode first
-    const savedGuest = localStorage.getItem('serhub_guest_mode');
-    if (savedGuest) {
-      try {
-        const guestData = JSON.parse(savedGuest);
-        setCurrentUser(guestData.user);
-        setCurrentProfile(guestData.profile);
-        setLoading(false);
+    let mounted = true;
+
+    const initAuth = async () => {
+      // Check for guest mode first
+      const savedGuest = localStorage.getItem('serhub_guest_mode');
+      if (savedGuest) {
+        try {
+          const guestData = JSON.parse(savedGuest);
+          if (mounted) {
+            setCurrentUser(guestData.user);
+            setCurrentProfile(guestData.profile);
+            setLoading(false);
+          }
+          return;
+        } catch (e) {
+          localStorage.removeItem('serhub_guest_mode');
+        }
+      }
+
+      if (!supabase || !isConfigured) {
+        if (mounted) setLoading(false);
         return;
+      }
+
+      // Check for existing session with timeout
+      try {
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+        const sessionPromise = supabase.auth.getSession();
+        const { data: { session } } = await Promise.race([sessionPromise, timeout]) as any;
+
+        if (session?.user && mounted) {
+          await syncUserWithSupabase(session.user);
+        } else if (mounted) {
+          setLoading(false);
+        }
       } catch (e) {
-        localStorage.removeItem('serhub_guest_mode');
+        console.error('Auth init error:', e);
+        if (mounted) setLoading(false);
       }
-    }
+    };
 
-    if (!supabase || !isConfigured) {
-      setLoading(false);
-      return;
-    }
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        syncUserWithSupabase(session.user);
-      } else {
-        setLoading(false);
-      }
-    });
+    initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        localStorage.removeItem('serhub_guest_mode');
-        await syncUserWithSupabase(session.user);
-      } else if (!localStorage.getItem('serhub_guest_mode')) {
-        setCurrentUser(null);
-        setCurrentProfile(null);
-      }
-      setLoading(false);
-    });
+    let subscription: any = null;
+    if (supabase && isConfigured) {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return;
+        if (session?.user) {
+          localStorage.removeItem('serhub_guest_mode');
+          await syncUserWithSupabase(session.user);
+        } else if (!localStorage.getItem('serhub_guest_mode')) {
+          setCurrentUser(null);
+          setCurrentProfile(null);
+        }
+        setLoading(false);
+      });
+      subscription = data.subscription;
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const syncUserWithSupabase = async (supabaseUser: SupabaseUser) => {
+    const fallbackName = supabaseUser.email?.split('@')[0] || 'User';
+    const fallbackUser: User = {
+      id: supabaseUser.id,
+      name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1),
+      email: supabaseUser.email || '',
+      role: 'collaborator' as SystemRole,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
+    };
+
     try {
-      // Fetch profile from serhub_profiles
-      const profile = await getProfile(supabaseUser.id);
+      // Fetch profile with timeout
+      const timeout = new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      const profile = await Promise.race([getProfile(supabaseUser.id), timeout]);
 
       if (profile) {
         setCurrentProfile(profile);
         setCurrentUser(profileToUser(profile));
       } else {
-        // Profile should be auto-created by trigger, but handle edge case
-        // Create a fallback user display
-        const fallbackName = supabaseUser.email?.split('@')[0] || 'User';
-        const fallbackUser: User = {
-          id: supabaseUser.id,
-          name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1),
-          email: supabaseUser.email || '',
-          role: 'member' as SystemRole,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
-        };
         setCurrentUser(fallbackUser);
         setCurrentProfile(null);
-        console.warn('Profile not found for user, using fallback');
       }
     } catch (error) {
       console.error('Error syncing user:', error);
-      // Set fallback user on error
-      const fallbackName = supabaseUser.email?.split('@')[0] || 'User';
-      setCurrentUser({
-        id: supabaseUser.id,
-        name: fallbackName,
-        email: supabaseUser.email || '',
-        role: 'member' as SystemRole,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
-      });
+      setCurrentUser(fallbackUser);
+      setCurrentProfile(null);
     }
     setLoading(false);
   };
