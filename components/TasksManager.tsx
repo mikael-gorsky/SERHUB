@@ -104,6 +104,11 @@ const TasksManager = () => {
     }
   };
 
+  const isOrgSection = (sectionId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    return section?.number === 'Org' || section?.title.toLowerCase().includes('organizational');
+  };
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +118,9 @@ const TasksManager = () => {
       return matchesSearch && matchesSection && matchesOwner;
     });
   }, [tasks, searchTerm, sectionFilter, ownerFilter]);
+
+  const orgTasks = useMemo(() => filteredTasks.filter(t => isOrgSection(t.section_id)), [filteredTasks, sections]);
+  const reportTasks = useMemo(() => filteredTasks.filter(t => !isOrgSection(t.section_id)), [filteredTasks, sections]);
 
   const openCreateModal = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -247,6 +255,61 @@ const TasksManager = () => {
     }
   };
 
+  const renderTaskCard = (task: Task) => {
+    const ownerName = getProfileName(task.owner_id);
+    const status = getStatusLabel(task.status, task.blocked);
+    const isDone = task.status === 100;
+    const stepStyles = getStepStyles(task.section_id);
+    const section = sections.find(s => s.id === task.section_id);
+
+    return (
+      <div
+        key={task.id}
+        onClick={() => openEditModal(task)}
+        className={`p-5 rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer flex items-center gap-5 ${stepStyles} ${isDone ? 'opacity-70' : ''}`}
+      >
+        <div className="w-14 shrink-0 text-center">
+          <span className="bg-hit-dark text-white text-[9px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
+            {section?.number || '??'}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className={`text-base font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+            {task.title}
+          </h4>
+          <p className={`text-sm font-medium truncate ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>
+            {task.description}
+          </p>
+          {task.blocked && (
+            <div className="flex items-center gap-2 text-xs text-red-600 mt-1">
+              <AlertTriangle size={12} />
+              <span className="font-bold">Blocked: {task.blocked_reason}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-6 shrink-0">
+          <div className="w-16 text-center">
+            <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Due</span>
+            <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
+          </div>
+          <div className="w-40 flex items-center gap-2">
+            <UserAvatar name={ownerName} size="sm" className="border-2 border-white/50 shadow-sm" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">{ownerName}</p>
+              <p className="text-[8px] font-black text-hit-blue uppercase tracking-wider opacity-60">Owner</p>
+            </div>
+          </div>
+          <div className="w-24">
+            <div className={`text-center py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border bg-white shadow-sm ${status.color}`}>
+              {status.label}
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-gray-200 group-hover:text-hit-blue transition-colors" />
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-hit-blue">
@@ -314,62 +377,45 @@ const TasksManager = () => {
         </div>
 
         {/* Task List */}
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-10">
+        <div className="flex-1 overflow-y-auto pr-2 pb-10">
           {filteredTasks.length > 0 ? (
-            filteredTasks.map(task => {
-              const ownerName = getProfileName(task.owner_id);
-              const status = getStatusLabel(task.status, task.blocked);
-              const isDone = task.status === 100;
-              const stepStyles = getStepStyles(task.section_id);
-              const section = sections.find(s => s.id === task.section_id);
-
-              return (
-                <div
-                  key={task.id}
-                  onClick={() => openEditModal(task)}
-                  className={`p-6 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer flex items-center gap-6 ${stepStyles} ${isDone ? 'opacity-70' : ''}`}
-                >
-                  <div className="w-16 shrink-0 text-center">
-                    <span className="bg-hit-dark text-white text-[10px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
-                      {section?.number || '??'}
-                    </span>
+            <>
+              {/* Organizational Tasks Group */}
+              {orgTasks.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <Users size={20} className="text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-gray-900">Organizational Tasks</h3>
+                      <p className="text-xs text-gray-500">{orgTasks.length} task{orgTasks.length !== 1 ? 's' : ''}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className={`text-lg font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                      {task.title}
-                    </h4>
-                    <p className={`text-sm font-medium truncate ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {task.description}
-                    </p>
-                    {task.blocked && (
-                      <div className="flex items-center gap-2 text-xs text-red-600 mt-1">
-                        <AlertTriangle size={12} />
-                        <span className="font-bold">Blocked: {task.blocked_reason}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-8 shrink-0">
-                    <div className="w-20 text-center">
-                      <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Due</span>
-                      <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
-                    </div>
-                    <div className="w-48 flex items-center gap-3">
-                      <UserAvatar name={ownerName} size="md" className="border-2 border-white/50 shadow-sm" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-black text-gray-900 truncate">{ownerName}</p>
-                        <p className="text-[9px] font-black text-hit-blue uppercase tracking-widest opacity-60">Owner</p>
-                      </div>
-                    </div>
-                    <div className="w-28">
-                      <div className={`text-center py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border bg-white shadow-sm ${status.color}`}>
-                        {status.label}
-                      </div>
-                    </div>
-                    <ChevronRight className="text-gray-200 group-hover:text-hit-blue transition-colors" />
+                  <div className="space-y-3">
+                    {orgTasks.map(task => renderTaskCard(task))}
                   </div>
                 </div>
-              );
-            })
+              )}
+
+              {/* Report Tasks Group */}
+              {reportTasks.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
+                      <CheckCircle2 size={20} className="text-teal-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-gray-900">Report Tasks</h3>
+                      <p className="text-xs text-gray-500">{reportTasks.length} task{reportTasks.length !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {reportTasks.map(task => renderTaskCard(task))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center p-20 text-center text-gray-400 bg-white rounded-[2rem] shadow-sm">
               <CheckCircle2 size={64} className="text-gray-100 mb-6" />
