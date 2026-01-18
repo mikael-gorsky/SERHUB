@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, Users, ListChecks, FileText } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { Meeting, MeetingLevel, Profile } from '../types';
 import UserAvatar from './UserAvatar';
 
@@ -109,32 +109,13 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
           </div>
         </div>
 
-        {/* Stats row */}
-        <div className="mt-4 flex items-center gap-6 text-sm text-gray-500">
-          {/* Agenda items count */}
-          {meeting.agenda && meeting.agenda.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <ListChecks size={14} />
-              <span>{meeting.agenda.length} agenda items</span>
-            </div>
-          )}
-
-          {/* Action items count */}
-          {meeting.action_items && meeting.action_items.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <FileText size={14} />
-              <span>{meeting.action_items.length} action items</span>
-            </div>
-          )}
-
-          {/* Participants count */}
-          {meeting.participants && meeting.participants.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Users size={14} />
-              <span>{meeting.participants.length} participants</span>
-            </div>
-          )}
-        </div>
+        {/* Participants count */}
+        {meeting.participants && meeting.participants.length > 0 && (
+          <div className="mt-4 flex items-center gap-1.5 text-sm text-gray-500">
+            <Users size={14} />
+            <span>{meeting.participants.length} participants</span>
+          </div>
+        )}
 
         {/* Notes preview */}
         {meeting.notes && (

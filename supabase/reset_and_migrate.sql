@@ -271,7 +271,7 @@ create policy "task_dependencies_delete" on serhub_task_dependencies for delete 
 
 -- MEETINGS POLICIES
 create policy "meetings_select_all" on serhub_meetings for select to authenticated using (true);
-create policy "meetings_insert_coordinator" on serhub_meetings for insert to authenticated with check (serhub_is_coordinator_or_admin());
+create policy "meetings_insert_authenticated" on serhub_meetings for insert to authenticated with check (true);
 create policy "meetings_update" on serhub_meetings for update to authenticated
   using (created_by = auth.uid() or serhub_is_coordinator_or_admin())
   with check (created_by = auth.uid() or serhub_is_coordinator_or_admin());

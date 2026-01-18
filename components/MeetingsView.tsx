@@ -18,21 +18,13 @@ import {
 import { MeetingService } from '../services/MeetingService';
 import { TaskService } from '../services/TaskService';
 import { UserService } from '../services/UserService';
-import { Meeting, MeetingType, Task, Profile } from '../types';
+import { Meeting, Task, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import MeetingCard from './MeetingCard';
 import UserAvatar from './UserAvatar';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-const meetingTypes: { id: MeetingType; label: string }[] = [
-  { id: 'project_meeting', label: 'Project Meeting' },
-  { id: 'review_meeting', label: 'Review Meeting' },
-  { id: 'status_meeting', label: 'Status Meeting' },
-  { id: 'recurring_meeting', label: 'Recurring Meeting' },
-  { id: 'other', label: 'Other' },
-];
 
 const recurrenceOptions = [
   { id: '', label: 'No Recurrence' },
@@ -45,7 +37,6 @@ const recurrenceOptions = [
 interface MeetingFormData {
   id?: string;
   title: string;
-  meeting_type: MeetingType;
   start_time: string;
   end_time: string;
   description: string;
@@ -152,7 +143,6 @@ const MeetingsView = () => {
 
     setFormData({
       title: '',
-      meeting_type: 'project_meeting',
       start_time: startTime.toISOString().slice(0, 16),
       end_time: endTime.toISOString().slice(0, 16),
       description: '',
@@ -168,7 +158,6 @@ const MeetingsView = () => {
     setFormData({
       id: meeting.id,
       title: meeting.title,
-      meeting_type: meeting.meeting_type,
       start_time: meeting.start_time.slice(0, 16),
       end_time: meeting.end_time.slice(0, 16),
       description: meeting.description || '',
@@ -188,14 +177,11 @@ const MeetingsView = () => {
     try {
       const meetingData = {
         title: formData.title,
-        meeting_type: formData.meeting_type,
         start_time: new Date(formData.start_time).toISOString(),
         end_time: new Date(formData.end_time).toISOString(),
         description: formData.description || null,
         recurrence_rule: formData.recurrence_rule || null,
-        created_by: currentUser.id,
-        agenda: [],
-        action_items: []
+        created_by: currentUser.id
       };
 
       if (isCreating) {
@@ -438,22 +424,6 @@ const MeetingsView = () => {
                   onChange={e => setFormData({...formData, title: e.target.value})}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                 />
-              </div>
-
-              {/* Type */}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.meeting_type}
-                  onChange={e => setFormData({...formData, meeting_type: e.target.value as MeetingType})}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                >
-                  {meetingTypes.map(t => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
-                  ))}
-                </select>
               </div>
 
               {/* Start & End */}

@@ -74,15 +74,9 @@ export const MeetingService = {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
-    // Ensure arrays are properly formatted
-    const createData = {
-      ...meeting,
-      agenda: meeting.agenda || [],
-      action_items: meeting.action_items || []
-    };
     const { data, error } = await supabase
       .from('serhub_meetings')
-      .insert(createData)
+      .insert(meeting)
       .select()
       .single();
     if (error) throw error;
@@ -115,59 +109,6 @@ export const MeetingService = {
       .eq('id', meetingId);
     if (error) throw error;
     return true;
-  },
-
-  // ============================================
-  // AGENDA MANAGEMENT
-  // ============================================
-
-  addAgendaItem: async (meetingId: string, item: string): Promise<Meeting | null> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    // First get current agenda
-    const meeting = await MeetingService.getById(meetingId);
-    if (!meeting) throw new Error("Meeting not found");
-
-    const newAgenda = [...(meeting.agenda || []), item];
-    return MeetingService.update(meetingId, { agenda: newAgenda });
-  },
-
-  removeAgendaItem: async (meetingId: string, index: number): Promise<Meeting | null> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    const meeting = await MeetingService.getById(meetingId);
-    if (!meeting) throw new Error("Meeting not found");
-
-    const newAgenda = meeting.agenda.filter((_, i) => i !== index);
-    return MeetingService.update(meetingId, { agenda: newAgenda });
-  },
-
-  // ============================================
-  // ACTION ITEMS MANAGEMENT
-  // ============================================
-
-  addActionItem: async (meetingId: string, item: string): Promise<Meeting | null> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    const meeting = await MeetingService.getById(meetingId);
-    if (!meeting) throw new Error("Meeting not found");
-
-    const newActionItems = [...(meeting.action_items || []), item];
-    return MeetingService.update(meetingId, { action_items: newActionItems });
-  },
-
-  removeActionItem: async (meetingId: string, index: number): Promise<Meeting | null> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    const meeting = await MeetingService.getById(meetingId);
-    if (!meeting) throw new Error("Meeting not found");
-
-    const newActionItems = meeting.action_items.filter((_, i) => i !== index);
-    return MeetingService.update(meetingId, { action_items: newActionItems });
   },
 
   // ============================================
