@@ -38,47 +38,73 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for guest mode first
-    const savedGuest = localStorage.getItem('serhub_guest_mode');
-    if (savedGuest) {
-      try {
-        const guestData = JSON.parse(savedGuest);
-        setCurrentUser(guestData.user);
-        setCurrentProfile(guestData.profile);
-        setLoading(false);
+    let mounted = true;
+
+    const initAuth = async () => {
+      // Check for guest mode first
+      const savedGuest = localStorage.getItem('serhub_guest_mode');
+      if (savedGuest) {
+        try {
+          const guestData = JSON.parse(savedGuest);
+          if (mounted) {
+            setCurrentUser(guestData.user);
+            setCurrentProfile(guestData.profile);
+            setLoading(false);
+          }
+          return;
+        } catch (e) {
+          localStorage.removeItem('serhub_guest_mode');
+        }
+      }
+
+      if (!supabase || !isConfigured) {
+        if (mounted) setLoading(false);
         return;
-      } catch (e) {
-        localStorage.removeItem('serhub_guest_mode');
       }
-    }
 
-    if (!supabase || !isConfigured) {
-      setLoading(false);
-      return;
-    }
+      // Check for existing session with timeout
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        syncUserWithSupabase(session.user);
-      } else {
-        setLoading(false);
+        const sessionPromise = supabase.auth.getSession();
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+
+        if (session?.user && mounted) {
+          await syncUserWithSupabase(session.user);
+        } else if (mounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth init error:', error);
+        if (mounted) setLoading(false);
       }
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        localStorage.removeItem('serhub_guest_mode');
-        await syncUserWithSupabase(session.user);
-      } else if (!localStorage.getItem('serhub_guest_mode')) {
-        setCurrentUser(null);
-        setCurrentProfile(null);
-      }
-      setLoading(false);
-    });
+    let subscription: any = null;
+    if (supabase && isConfigured) {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return;
+        if (session?.user) {
+          localStorage.removeItem('serhub_guest_mode');
+          await syncUserWithSupabase(session.user);
+        } else if (!localStorage.getItem('serhub_guest_mode')) {
+          setCurrentUser(null);
+          setCurrentProfile(null);
+        }
+        setLoading(false);
+      });
+      subscription = data.subscription;
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const syncUserWithSupabase = async (supabaseUser: SupabaseUser) => {
