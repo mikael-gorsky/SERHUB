@@ -18,20 +18,13 @@ import {
 import { MeetingService } from '../services/MeetingService';
 import { TaskService } from '../services/TaskService';
 import { UserService } from '../services/UserService';
-import { Meeting, MeetingLevel, MeetingType, Task, Profile } from '../types';
+import { Meeting, MeetingType, Task, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import MeetingCard from './MeetingCard';
 import UserAvatar from './UserAvatar';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-const levelFilters: { id: MeetingLevel | 'all'; label: string; color: string }[] = [
-  { id: 'all', label: 'All Levels', color: 'bg-teal-600 text-white' },
-  { id: 'team', label: 'Team', color: 'bg-blue-100 text-blue-700' },
-  { id: 'faculty', label: 'Faculty', color: 'bg-purple-100 text-purple-700' },
-  { id: 'institute', label: 'Institute', color: 'bg-amber-100 text-amber-700' },
-];
 
 const meetingTypes: { id: MeetingType; label: string }[] = [
   { id: 'project_meeting', label: 'Project Meeting' },
@@ -70,7 +63,6 @@ const MeetingsView = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [levelFilter, setLevelFilter] = useState<MeetingLevel | 'all'>('all');
   const [showPast, setShowPast] = useState(false);
 
   // Calendar
@@ -109,12 +101,11 @@ const MeetingsView = () => {
     return meetings.filter(meeting => {
       const matchesSearch = (meeting.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesLevel = levelFilter === 'all' || meeting.level === levelFilter;
       const isPast = new Date(meeting.end_time) < now;
       const matchesTime = showPast || !isPast;
-      return matchesSearch && matchesLevel && matchesTime;
+      return matchesSearch && matchesTime;
     });
-  }, [meetings, searchTerm, levelFilter, showPast]);
+  }, [meetings, searchTerm, showPast]);
 
   // Calendar helpers
   const year = currentDate.getFullYear();
@@ -267,21 +258,6 @@ const MeetingsView = () => {
               className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </div>
-
-          {/* Level Filter Pills */}
-          <div className="flex gap-2">
-            {levelFilters.map(level => (
-              <button
-                key={level.id}
-                onClick={() => setLevelFilter(level.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  levelFilter === level.id ? level.color : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {level.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Meetings List */}
@@ -299,8 +275,8 @@ const MeetingsView = () => {
               <Calendar size={48} className="text-gray-200 mb-4" />
               <h3 className="text-lg font-semibold text-gray-600">No Meetings</h3>
               <p className="text-sm max-w-xs mt-2">
-                {searchTerm || levelFilter !== 'all'
-                  ? 'No meetings match current filters.'
+                {searchTerm
+                  ? 'No meetings match your search.'
                   : 'Create your first meeting to get started.'}
               </p>
             </div>
