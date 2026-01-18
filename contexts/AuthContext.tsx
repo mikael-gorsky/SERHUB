@@ -108,39 +108,35 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   }, []);
 
   const syncUserWithSupabase = async (supabaseUser: SupabaseUser) => {
+    const fallbackName = supabaseUser.email?.split('@')[0] || 'User';
+    const fallbackUser: User = {
+      id: supabaseUser.id,
+      name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1),
+      email: supabaseUser.email || '',
+      role: 'collaborator' as SystemRole,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
+    };
+
     try {
-      // Fetch profile from serhub_profiles
-      const profile = await getProfile(supabaseUser.id);
+      // Fetch profile with timeout
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+      );
+      const profilePromise = getProfile(supabaseUser.id);
+      const profile = await Promise.race([profilePromise, timeoutPromise]);
 
       if (profile) {
         setCurrentProfile(profile);
         setCurrentUser(profileToUser(profile));
       } else {
-        // Profile should be auto-created by trigger, but handle edge case
-        // Create a fallback user display
-        const fallbackName = supabaseUser.email?.split('@')[0] || 'User';
-        const fallbackUser: User = {
-          id: supabaseUser.id,
-          name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1),
-          email: supabaseUser.email || '',
-          role: 'member' as SystemRole,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
-        };
         setCurrentUser(fallbackUser);
         setCurrentProfile(null);
-        console.warn('Profile not found for user, using fallback');
+        console.warn('Profile not found, using fallback');
       }
     } catch (error) {
       console.error('Error syncing user:', error);
-      // Set fallback user on error
-      const fallbackName = supabaseUser.email?.split('@')[0] || 'User';
-      setCurrentUser({
-        id: supabaseUser.id,
-        name: fallbackName,
-        email: supabaseUser.email || '',
-        role: 'member' as SystemRole,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
-      });
+      setCurrentUser(fallbackUser);
+      setCurrentProfile(null);
     }
     setLoading(false);
   };
