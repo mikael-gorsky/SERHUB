@@ -8,12 +8,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
-  Flag
+  Flag,
+  X,
+  Save,
+  CheckCircle2,
+  UserPlus,
+  Repeat
 } from 'lucide-react';
 import { MeetingService } from '../services/MeetingService';
 import { TaskService } from '../services/TaskService';
-import { Meeting, MeetingLevel, Task } from '../types';
+import { UserService } from '../services/UserService';
+import { Meeting, MeetingLevel, MeetingType, Task, Profile } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import MeetingCard from './MeetingCard';
+import UserAvatar from './UserAvatar';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -25,9 +33,40 @@ const levelFilters: { id: MeetingLevel | 'all'; label: string; color: string }[]
   { id: 'institute', label: 'Institute', color: 'bg-amber-100 text-amber-700' },
 ];
 
+const meetingTypes: { id: MeetingType; label: string }[] = [
+  { id: 'project_meeting', label: 'Project Meeting' },
+  { id: 'review_meeting', label: 'Review Meeting' },
+  { id: 'status_meeting', label: 'Status Meeting' },
+  { id: 'recurring_meeting', label: 'Recurring Meeting' },
+  { id: 'other', label: 'Other' },
+];
+
+const recurrenceOptions = [
+  { id: '', label: 'No Recurrence' },
+  { id: 'daily', label: 'Daily' },
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'biweekly', label: 'Bi-weekly' },
+  { id: 'monthly', label: 'Monthly' },
+];
+
+interface MeetingFormData {
+  id?: string;
+  title: string;
+  meeting_type: MeetingType;
+  start_time: string;
+  end_time: string;
+  description: string;
+  recurrence_rule: string;
+  level: MeetingLevel | '';
+  participant_ids: string[];
+  participant_text: string; // For free-text participants
+}
+
 const MeetingsView = () => {
+  const { currentUser } = useAuth();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -38,6 +77,12 @@ const MeetingsView = () => {
   // Calendar
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Modal
+  const [showModal, setShowModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState<MeetingFormData | null>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -45,12 +90,14 @@ const MeetingsView = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [meetingsData, tasksData] = await Promise.all([
+      const [meetingsData, tasksData, profilesData] = await Promise.all([
         MeetingService.getAll(),
-        TaskService.getAll()
+        TaskService.getAll(),
+        UserService.getAll()
       ]);
       setMeetings(meetingsData);
       setTasks(tasksData);
+      setProfiles(profilesData);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -89,7 +136,6 @@ const MeetingsView = () => {
 
   const calendarDays = getCalendarDays();
 
-  // Get events for a specific date
   const getEventsForDate = (day: number) => {
     const date = new Date(year, month, day);
     const dateStr = date.toISOString().split('T')[0];
@@ -109,6 +155,89 @@ const MeetingsView = () => {
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
+  const openCreateModal = () => {
+    const now = new Date();
+    const startTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+    setFormData({
+      title: '',
+      meeting_type: 'project_meeting',
+      start_time: startTime.toISOString().slice(0, 16),
+      end_time: endTime.toISOString().slice(0, 16),
+      description: '',
+      recurrence_rule: '',
+      level: '',
+      participant_ids: [],
+      participant_text: ''
+    });
+    setIsCreating(true);
+    setShowModal(true);
+  };
+
+  const openEditModal = (meeting: Meeting) => {
+    setFormData({
+      id: meeting.id,
+      title: meeting.title,
+      meeting_type: meeting.meeting_type,
+      start_time: meeting.start_time.slice(0, 16),
+      end_time: meeting.end_time.slice(0, 16),
+      description: meeting.description || '',
+      recurrence_rule: meeting.recurrence_rule || '',
+      level: meeting.level || '',
+      participant_ids: [],
+      participant_text: ''
+    });
+    setIsCreating(false);
+    setShowModal(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData || !currentUser) return;
+
+    setIsSaving(true);
+    try {
+      const meetingData = {
+        title: formData.title,
+        meeting_type: formData.meeting_type,
+        start_time: new Date(formData.start_time).toISOString(),
+        end_time: new Date(formData.end_time).toISOString(),
+        description: formData.description || null,
+        recurrence_rule: formData.recurrence_rule || null,
+        level: formData.level || null,
+        created_by: currentUser.id,
+        agenda: [],
+        action_items: []
+      };
+
+      if (isCreating) {
+        await MeetingService.create(meetingData);
+      } else {
+        await MeetingService.update(formData.id!, meetingData);
+      }
+
+      setShowModal(false);
+      setFormData(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to save meeting:', error);
+      alert("Failed to save meeting.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleParticipant = (profileId: string) => {
+    if (!formData) return;
+    const ids = formData.participant_ids;
+    if (ids.includes(profileId)) {
+      setFormData({ ...formData, participant_ids: ids.filter(id => id !== profileId) });
+    } else {
+      setFormData({ ...formData, participant_ids: [...ids, profileId] });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-teal-600">
@@ -125,6 +254,7 @@ const MeetingsView = () => {
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
           <button
+            onClick={openCreateModal}
             className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
             title="Create New Meeting"
           >
@@ -165,7 +295,7 @@ const MeetingsView = () => {
               <MeetingCard
                 key={meeting.id}
                 meeting={meeting}
-                onClick={() => console.log('Edit meeting:', meeting.id)}
+                onClick={() => openEditModal(meeting)}
               />
             ))
           ) : (
@@ -295,6 +425,213 @@ const MeetingsView = () => {
           </div>
         </div>
       </div>
+
+      {/* Meeting Modal */}
+      {showModal && formData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
+                  <Calendar size={20} className="text-teal-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {isCreating ? 'New Meeting' : 'Edit Meeting'}
+                  </h2>
+                  <p className="text-xs text-gray-500">Fill in the meeting details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-600 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Meeting title..."
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Type & Level */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.meeting_type}
+                    onChange={e => setFormData({...formData, meeting_type: e.target.value as MeetingType})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  >
+                    {meetingTypes.map(t => (
+                      <option key={t.id} value={t.id}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Level
+                  </label>
+                  <select
+                    value={formData.level}
+                    onChange={e => setFormData({...formData, level: e.target.value as MeetingLevel | ''})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  >
+                    <option value="">No level</option>
+                    <option value="team">Team</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="institute">Institute</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Start & End */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Start <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.start_time}
+                    onChange={e => setFormData({...formData, start_time: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    End <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.end_time}
+                    onChange={e => setFormData({...formData, end_time: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Recurrence */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Repeat size={14} />
+                  Recurrence
+                </label>
+                <select
+                  value={formData.recurrence_rule}
+                  onChange={e => setFormData({...formData, recurrence_rule: e.target.value})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  {recurrenceOptions.map(r => (
+                    <option key={r.id} value={r.id}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Meeting description or agenda..."
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              {/* Participants */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Users size={14} />
+                  Participants
+                </label>
+
+                {/* User selection chips */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {profiles.map(p => {
+                    const isSelected = formData.participant_ids.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => toggleParticipant(p.id)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          isSelected
+                            ? 'bg-teal-100 text-teal-800 border-2 border-teal-300'
+                            : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
+                        }`}
+                      >
+                        <UserAvatar name={`${p.first_name} ${p.last_name}`} size="xs" />
+                        {p.first_name} {p.last_name}
+                        {isSelected && <CheckCircle2 size={12} className="text-teal-600" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Free text for external participants */}
+                <div className="flex items-center gap-2">
+                  <UserPlus size={16} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Add external participants (comma-separated)..."
+                    value={formData.participant_text}
+                    onChange={e => setFormData({...formData, participant_text: e.target.value})}
+                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+
+                {(formData.participant_ids.length > 0 || formData.participant_text) && (
+                  <p className="text-xs text-gray-400 mt-2">
+                    {formData.participant_ids.length} team member{formData.participant_ids.length !== 1 ? 's' : ''} selected
+                    {formData.participant_text && ' + external participants'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-5 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving || !formData.title}
+                className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                {isCreating ? 'Create Meeting' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
