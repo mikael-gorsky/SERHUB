@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FileText, Globe, ChevronRight, X, LayoutDashboard, CheckSquare, Calendar, Users, Settings, HelpCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Folder, FileText, Globe, ChevronRight } from 'lucide-react';
 import { Section } from '../types';
 import { getSectionsHierarchy, getSectionProgress } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import AppLogo from './AppLogo';
 
 interface SectionTreeProps {
   selectedSectionId: string | null;
@@ -12,21 +10,11 @@ interface SectionTreeProps {
 }
 
 const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSection }) => {
-  const { currentUser, signOut } = useAuth();
+  const { currentUser } = useAuth();
   const [sections, setSections] = useState<Section[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [totalProgress, setTotalProgress] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { icon: Users, label: 'Team', path: '/team' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
-    { icon: HelpCircle, label: 'Help', path: '/help' },
-  ];
 
   useEffect(() => {
     // Only load sections after user is authenticated
@@ -157,119 +145,32 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
   }
 
   return (
-    <>
-      {/* Hamburger Menu Overlay */}
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="w-72 bg-white shadow-2xl flex flex-col h-full">
-            {/* Menu Header */}
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AppLogo size={36} />
-                <span className="font-bold text-lg text-teal-700">SERHUB</span>
-              </div>
-              <button onClick={() => setMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X size={20} className="text-gray-500" />
-              </button>
-            </div>
-
-            {/* Menu Items */}
-            <nav className="flex-1 p-4">
-              <ul className="space-y-1">
-                {menuItems.map((item) => (
-                  <li key={item.path}>
-                    <Link
-                      to={item.path}
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                    >
-                      <item.icon size={20} />
-                      <span className="font-medium">{item.label}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            {/* Menu Footer - Progress */}
-            <div className="p-4 border-t border-gray-200">
-              <p className="text-xs font-bold text-teal-600 tracking-wider mb-2">PROJECT PROGRESS</p>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-teal-500 rounded-full" style={{ width: `${totalProgress}%` }} />
-                </div>
-                <span className="text-sm font-bold text-gray-700">{totalProgress}%</span>
-              </div>
-            </div>
-
-            {/* Sign Out */}
-            <div className="p-4 border-t border-gray-200">
-              <button
-                onClick={() => { signOut(); setMenuOpen(false); }}
-                className="w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-          {/* Backdrop */}
-          <div className="flex-1 bg-black/30" onClick={() => setMenuOpen(false)} />
-        </div>
-      )}
-
-      <div className="w-[40%] min-w-[360px] bg-gray-50 border-r border-gray-200 flex flex-col h-full">
-        {/* Institutional Header */}
-        <div className="p-5 border-b border-gray-200">
-          {/* App Logo Button */}
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="mb-4 -ml-1 hover:opacity-80 transition-opacity"
-          >
-            <AppLogo size={36} />
-          </button>
-
-          {/* Institution Info */}
-          <div className="text-sm text-gray-700 leading-relaxed space-y-0.5">
-            <p className="font-bold text-gray-900">HIT Holon Institute of Technology</p>
-            <p>Faculty of Science</p>
-            <p>School of Computer Science</p>
-          </div>
-
-          {/* Project Title */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <h2 className="text-base font-bold text-gray-900">Self Evaluation Report for CHE</h2>
-            <p className="text-xs text-teal-600 font-bold mt-1 tracking-wide uppercase">
-              Academic Year 2024/2025
-            </p>
-          </div>
-        </div>
-
+    <div className="w-[40%] min-w-[360px] bg-gray-50 border-r border-gray-200 flex flex-col h-full">
       {/* Section Tree */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 pt-2">
         <div className="space-y-1">
           {sections.map(section => renderSection(section))}
         </div>
       </div>
 
-        {/* Progress Card */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-xs font-bold text-teal-600 tracking-wider mb-3">
-              TOTAL SECTION PROGRESS
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 rounded-full transition-all duration-500"
-                  style={{ width: `${totalProgress}%` }}
-                />
-              </div>
-              <span className="text-sm font-bold text-gray-700">{totalProgress}%</span>
+      {/* Progress Card */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <p className="text-xs font-bold text-teal-600 tracking-wider mb-3">
+            TOTAL SECTION PROGRESS
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all duration-500"
+                style={{ width: `${totalProgress}%` }}
+              />
             </div>
+            <span className="text-sm font-bold text-gray-700">{totalProgress}%</span>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
