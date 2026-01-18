@@ -1,18 +1,12 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, Users } from 'lucide-react';
-import { Meeting, MeetingLevel, Profile } from '../types';
+import { Calendar, Clock, Users } from 'lucide-react';
+import { Meeting, Profile } from '../types';
 import UserAvatar from './UserAvatar';
 
 interface MeetingCardProps {
   meeting: Meeting;
   onClick?: () => void;
 }
-
-const levelLabels: Record<MeetingLevel, { label: string; color: string; bg: string }> = {
-  team: { label: 'Team', color: 'text-blue-700', bg: 'bg-blue-100' },
-  faculty: { label: 'Faculty', color: 'text-purple-700', bg: 'bg-purple-100' },
-  institute: { label: 'Institute', color: 'text-amber-700', bg: 'bg-amber-100' },
-};
 
 const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
   // Format date and time
@@ -43,7 +37,6 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
   };
 
   const creatorName = getCreatorName();
-  const levelInfo = meeting.level ? levelLabels[meeting.level] : null;
 
   return (
     <div
@@ -54,13 +47,6 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
         {/* Header row */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            {/* Level badge */}
-            {levelInfo && (
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${levelInfo.bg} ${levelInfo.color} mb-2`}>
-                {levelInfo.label}
-              </span>
-            )}
-
             <h4 className="text-base font-semibold text-gray-900 mb-1">
               {meeting.title}
             </h4>
@@ -83,14 +69,6 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
                 <Clock size={14} />
                 <span>{startDT.time} - {endDT.time}</span>
               </div>
-
-              {/* Location */}
-              {meeting.location && (
-                <div className="flex items-center gap-1.5 text-gray-500">
-                  <MapPin size={14} />
-                  <span className="truncate max-w-[150px]">{meeting.location}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -113,16 +91,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
         {meeting.participants && meeting.participants.length > 0 && (
           <div className="mt-4 flex items-center gap-1.5 text-sm text-gray-500">
             <Users size={14} />
-            <span>{meeting.participants.length} participants</span>
-          </div>
-        )}
-
-        {/* Notes preview */}
-        {meeting.notes && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 line-clamp-2">
-              {meeting.notes}
-            </p>
+            <span>{meeting.participants.length} participant{meeting.participants.length !== 1 ? 's' : ''}</span>
           </div>
         )}
       </div>

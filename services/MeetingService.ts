@@ -1,4 +1,4 @@
-import { Meeting, MeetingLevel } from '../types';
+import { Meeting } from '../types';
 import { supabase, isConfigured } from '../lib/supabase';
 
 export const MeetingService = {
@@ -10,27 +10,19 @@ export const MeetingService = {
       .from('serhub_meetings')
       .select(`
         *,
-        creator:serhub_profiles!created_by(id, first_name, last_name, title, avatar_url)
+        creator:serhub_profiles!created_by(id, first_name, last_name, title, avatar_url),
+        participants:serhub_meeting_participants(
+          profile:serhub_profiles(id, first_name, last_name, title, avatar_url)
+        )
       `)
       .order('start_time', { ascending: false });
     if (error) throw error;
-    return data || [];
-  },
 
-  getByLevel: async (level: MeetingLevel): Promise<Meeting[]> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    const { data, error } = await supabase
-      .from('serhub_meetings')
-      .select(`
-        *,
-        creator:serhub_profiles!created_by(id, first_name, last_name, title, avatar_url)
-      `)
-      .eq('level', level)
-      .order('start_time', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    // Flatten participants structure
+    return (data || []).map(meeting => ({
+      ...meeting,
+      participants: meeting.participants?.map((p: any) => p.profile).filter(Boolean) || []
+    }));
   },
 
   getUpcoming: async (days: number = 7): Promise<Meeting[]> => {

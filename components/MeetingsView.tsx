@@ -12,8 +12,8 @@ import {
   X,
   Save,
   CheckCircle2,
-  UserPlus,
-  Repeat
+  Repeat,
+  Trash2
 } from 'lucide-react';
 import { MeetingService } from '../services/MeetingService';
 import { TaskService } from '../services/TaskService';
@@ -42,7 +42,6 @@ interface MeetingFormData {
   description: string;
   recurrence_rule: string;
   participant_ids: string[];
-  participant_text: string; // For free-text participants
 }
 
 const MeetingsView = () => {
@@ -147,14 +146,21 @@ const MeetingsView = () => {
       end_time: endTime.toISOString().slice(0, 16),
       description: '',
       recurrence_rule: '',
-      participant_ids: [],
-      participant_text: ''
+      participant_ids: []
     });
     setIsCreating(true);
     setShowModal(true);
   };
 
-  const openEditModal = (meeting: Meeting) => {
+  const openEditModal = async (meeting: Meeting) => {
+    // Load existing participants
+    let participantIds: string[] = [];
+    try {
+      participantIds = await MeetingService.getParticipants(meeting.id);
+    } catch (error) {
+      console.error('Failed to load participants:', error);
+    }
+
     setFormData({
       id: meeting.id,
       title: meeting.title,
@@ -162,8 +168,7 @@ const MeetingsView = () => {
       end_time: meeting.end_time.slice(0, 16),
       description: meeting.description || '',
       recurrence_rule: meeting.recurrence_rule || '',
-      participant_ids: [],
-      participant_text: ''
+      participant_ids: participantIds
     });
     setIsCreating(false);
     setShowModal(true);
@@ -184,11 +189,26 @@ const MeetingsView = () => {
         created_by: currentUser.id
       };
 
+      let meetingId: string;
+
       if (isCreating) {
-        await MeetingService.create(meetingData);
+        const created = await MeetingService.create(meetingData);
+        if (!created) throw new Error('Failed to create meeting');
+        meetingId = created.id;
       } else {
-        await MeetingService.update(formData.id!, meetingData);
+        meetingId = formData.id!;
+        await MeetingService.update(meetingId, meetingData);
       }
+
+      // Sync participants
+      const existingParticipants = isCreating ? [] : await MeetingService.getParticipants(meetingId);
+      const toAdd = formData.participant_ids.filter(id => !existingParticipants.includes(id));
+      const toRemove = existingParticipants.filter(id => !formData.participant_ids.includes(id));
+
+      await Promise.all([
+        ...toAdd.map(userId => MeetingService.addParticipant(meetingId, userId)),
+        ...toRemove.map(userId => MeetingService.removeParticipant(meetingId, userId))
+      ]);
 
       setShowModal(false);
       setFormData(null);
@@ -196,6 +216,24 @@ const MeetingsView = () => {
     } catch (error) {
       console.error('Failed to save meeting:', error);
       alert("Failed to save meeting.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!formData?.id) return;
+    if (!confirm('Are you sure you want to delete this meeting?')) return;
+
+    setIsSaving(true);
+    try {
+      await MeetingService.delete(formData.id);
+      setShowModal(false);
+      setFormData(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to delete meeting:', error);
+      alert("Failed to delete meeting.");
     } finally {
       setIsSaving(false);
     }
@@ -493,7 +531,7 @@ const MeetingsView = () => {
                 </label>
 
                 {/* User selection chips */}
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-wrap gap-2">
                   {profiles.map(p => {
                     const isSelected = formData.participant_ids.includes(p.id);
                     return (
@@ -515,44 +553,48 @@ const MeetingsView = () => {
                   })}
                 </div>
 
-                {/* Free text for external participants */}
-                <div className="flex items-center gap-2">
-                  <UserPlus size={16} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Add external participants (comma-separated)..."
-                    value={formData.participant_text}
-                    onChange={e => setFormData({...formData, participant_text: e.target.value})}
-                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-
-                {(formData.participant_ids.length > 0 || formData.participant_text) && (
+                {formData.participant_ids.length > 0 && (
                   <p className="text-xs text-gray-400 mt-2">
-                    {formData.participant_ids.length} team member{formData.participant_ids.length !== 1 ? 's' : ''} selected
-                    {formData.participant_text && ' + external participants'}
+                    {formData.participant_ids.length} participant{formData.participant_ids.length !== 1 ? 's' : ''} selected
                   </p>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-8 py-5 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-gray-50">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving || !formData.title}
-                className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                {isCreating ? 'Create Meeting' : 'Save Changes'}
-              </button>
+            <div className="px-8 py-5 border-t border-gray-100 flex justify-between shrink-0 bg-gray-50">
+              {/* Delete button - only for existing meetings */}
+              {!isCreating ? (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isSaving}
+                  className="px-4 py-2.5 bg-white border border-red-200 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving || !formData.title}
+                  className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  {isCreating ? 'Create Meeting' : 'Save Changes'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -145,18 +145,13 @@ export interface OrgTaskCollaborator {
 // MEETING TYPES
 // ============================================
 
-export type MeetingLevel = 'team' | 'faculty' | 'institute';
-
 export interface Meeting {
   id: string;
   title: string;
   description?: string;
-  level?: MeetingLevel;
-  location?: string;
   start_time: string;
   end_time: string;
   recurrence_rule?: string;
-  notes?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
