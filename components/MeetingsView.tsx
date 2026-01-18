@@ -57,7 +57,6 @@ interface MeetingFormData {
   end_time: string;
   description: string;
   recurrence_rule: string;
-  level: MeetingLevel | '';
   participant_ids: string[];
   participant_text: string; // For free-text participants
 }
@@ -167,7 +166,6 @@ const MeetingsView = () => {
       end_time: endTime.toISOString().slice(0, 16),
       description: '',
       recurrence_rule: '',
-      level: '',
       participant_ids: [],
       participant_text: ''
     });
@@ -184,7 +182,6 @@ const MeetingsView = () => {
       end_time: meeting.end_time.slice(0, 16),
       description: meeting.description || '',
       recurrence_rule: meeting.recurrence_rule || '',
-      level: meeting.level || '',
       participant_ids: [],
       participant_text: ''
     });
@@ -205,7 +202,6 @@ const MeetingsView = () => {
         end_time: new Date(formData.end_time).toISOString(),
         description: formData.description || null,
         recurrence_rule: formData.recurrence_rule || null,
-        level: formData.level || null,
         created_by: currentUser.id,
         agenda: [],
         action_items: []
@@ -468,37 +464,20 @@ const MeetingsView = () => {
                 />
               </div>
 
-              {/* Type & Level */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Type <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.meeting_type}
-                    onChange={e => setFormData({...formData, meeting_type: e.target.value as MeetingType})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  >
-                    {meetingTypes.map(t => (
-                      <option key={t.id} value={t.id}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Level
-                  </label>
-                  <select
-                    value={formData.level}
-                    onChange={e => setFormData({...formData, level: e.target.value as MeetingLevel | ''})}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  >
-                    <option value="">No level</option>
-                    <option value="team">Team</option>
-                    <option value="faculty">Faculty</option>
-                    <option value="institute">Institute</option>
-                  </select>
-                </div>
+              {/* Type */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.meeting_type}
+                  onChange={e => setFormData({...formData, meeting_type: e.target.value as MeetingType})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  {meetingTypes.map(t => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Start & End */}
