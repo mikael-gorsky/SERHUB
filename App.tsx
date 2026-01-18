@@ -6,7 +6,7 @@ import UserAvatar from './components/UserAvatar';
 import SectionTree from './components/SectionTree';
 import SectionDetail from './components/SectionDetail';
 import TabNavigation, { TabType } from './components/TabNavigation';
-import TasksView from './components/TasksView';
+import TasksManager from './components/TasksManager';
 import MeetingsView from './components/MeetingsView';
 import TeamManager from './components/TeamManager';
 import SettingsPanel from './components/SettingsPanel';
@@ -125,8 +125,8 @@ const MainView = () => {
         )}
 
         {activeTab === 'tasks' && (
-          <div className="h-full overflow-auto">
-            <TasksView />
+          <div className="h-full overflow-auto p-6">
+            <TasksManager />
           </div>
         )}
 

@@ -86,8 +86,15 @@ const TasksManager = () => {
   const getStepStyles = (sectionId: string) => {
     const section = sections.find(s => s.id === sectionId);
     if (!section) return "bg-white border-transparent";
+
+    // Special styling for Organizational Tasks section
+    if (section.number === 'Org' || section.title.toLowerCase().includes('organizational')) {
+      return "bg-purple-50 text-purple-700 border-purple-100 shadow-purple-100/50";
+    }
+
     const num = parseInt(section.number.replace(/[^0-9]/g, ''));
     switch(num) {
+      case 0: return "bg-sky-50 text-sky-700 border-sky-100 shadow-sky-100/50"; // Executive Summary
       case 1: return "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-100/50";
       case 2: return "bg-gradient-to-br from-emerald-50 to-amber-50 text-hit-blue border-emerald-100 shadow-emerald-100/30";
       case 3: return "bg-amber-50 text-amber-700 border-amber-100 shadow-amber-100/50";
