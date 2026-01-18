@@ -26,7 +26,9 @@ export const useAuth = () => {
 // Helper to convert Profile to User for display
 const profileToUser = (profile: Profile): User => ({
   id: profile.id,
-  name: `${profile.first_name} ${profile.last_name}`,
+  name: profile.title
+    ? `${profile.title} ${profile.first_name} ${profile.last_name}`
+    : `${profile.first_name} ${profile.last_name}`,
   email: profile.email,
   role: profile.system_role,
   avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.first_name + ' ' + profile.last_name)}&background=005695&color=fff`
@@ -144,6 +146,7 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       email: 'MikaelG@hit.ac.il',
       first_name: 'Mikael',
       last_name: 'Gorsky',
+      title: 'Dr.',
       organization_role: 'department_faculty',
       system_role: 'admin',  // admin | supervisor | collaborator
       is_active: true,
