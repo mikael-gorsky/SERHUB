@@ -1,36 +1,56 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Search, 
-  Loader2, 
-  X, 
-  Save, 
+import {
+  Search,
+  Loader2,
+  X,
+  Save,
   ChevronRight,
   CheckCircle2,
   Plus,
-  Fingerprint
+  AlertTriangle,
+  Users
 } from 'lucide-react';
 import { TaskService } from '../services/TaskService';
 import { SectionService } from '../services/SectionService';
-import { UserService } from '../services/UserService';
-import { Task, User, Section } from '../types';
+import { UserService, profileToUser } from '../services/UserService';
+import { Task, Profile, Section } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from './UserAvatar';
+import { supabase, isConfigured } from '../lib/supabase';
+
+interface TaskFormData {
+  id?: string;
+  title: string;
+  description: string;
+  section_id: string;
+  owner_id: string;
+  supervisor_id: string;
+  status: number;
+  blocked: boolean;
+  blocked_reason: string;
+  start_date: string;
+  due_date: string;
+  collaborator_ids: string[];
+}
 
 const TasksManager = () => {
+  const { currentUser } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [sectionFilter, setSectionFilter] = useState('All');
   const [ownerFilter, setOwnerFilter] = useState('All');
-  
+
   // Modal State
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState<TaskFormData | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -39,13 +59,13 @@ const TasksManager = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [tasksData, usersData, sectionsData] = await Promise.all([
+      const [tasksData, profilesData, sectionsData] = await Promise.all([
         TaskService.getAll(),
         UserService.getAll(),
         SectionService.getAll()
       ]);
       setTasks(tasksData);
-      setUsers(usersData);
+      setProfiles(profilesData);
       setSections(sectionsData);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -54,12 +74,13 @@ const TasksManager = () => {
     }
   };
 
-  const getStatusLabel = (progress: number) => {
+  const getStatusLabel = (progress: number, blocked: boolean) => {
+    if (blocked) return { label: 'Blocked', color: 'text-red-600 bg-red-50 border-red-100', bar: 'bg-red-500' };
     if (progress === 100) return { label: 'Done', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
-    if (progress < 25) return { label: 'Launching', color: 'text-slate-500 bg-slate-50 border-slate-100', bar: 'bg-slate-400' };
-    if (progress < 50) return { label: 'Progressing', color: 'text-hit-blue bg-blue-50 border-blue-100', bar: 'bg-hit-blue' };
-    if (progress < 75) return { label: 'Polishing', color: 'text-[#d97706] bg-amber-50 border-amber-100', bar: 'bg-hit-accent' };
-    return { label: 'Delivering', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
+    if (progress < 25) return { label: 'Starting', color: 'text-slate-500 bg-slate-50 border-slate-100', bar: 'bg-slate-400' };
+    if (progress < 50) return { label: 'In Progress', color: 'text-hit-blue bg-blue-50 border-blue-100', bar: 'bg-hit-blue' };
+    if (progress < 75) return { label: 'Advancing', color: 'text-amber-600 bg-amber-50 border-amber-100', bar: 'bg-amber-500' };
+    return { label: 'Finishing', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
   };
 
   const getStepStyles = (sectionId: string) => {
@@ -78,74 +99,166 @@ const TasksManager = () => {
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSection = sectionFilter === 'All' || task.sectionId === sectionFilter;
-      const matchesOwner = ownerFilter === 'All' || task.assignedTo === ownerFilter;
+      const matchesSection = sectionFilter === 'All' || task.section_id === sectionFilter;
+      const matchesOwner = ownerFilter === 'All' || task.owner_id === ownerFilter;
       return matchesSearch && matchesSection && matchesOwner;
     });
   }, [tasks, searchTerm, sectionFilter, ownerFilter]);
 
-  const handleUpdateTask = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    setFormData({
+      title: '',
+      description: '',
+      section_id: sections[0]?.id || '',
+      owner_id: currentUser?.id || profiles[0]?.id || '',
+      supervisor_id: '',
+      status: 0,
+      blocked: false,
+      blocked_reason: '',
+      start_date: today,
+      due_date: nextWeek,
+      collaborator_ids: []
+    });
+    setIsCreating(true);
+    setShowModal(true);
+  };
+
+  const openEditModal = async (task: Task) => {
+    // Fetch collaborators for this task
+    let collaboratorIds: string[] = [];
+    if (isConfigured && supabase) {
+      const { data } = await supabase
+        .from('serhub_task_collaborators')
+        .select('profile_id')
+        .eq('task_id', task.id);
+      collaboratorIds = data?.map(c => c.profile_id) || [];
+    }
+
+    setFormData({
+      id: task.id,
+      title: task.title,
+      description: task.description || '',
+      section_id: task.section_id,
+      owner_id: task.owner_id,
+      supervisor_id: task.supervisor_id || '',
+      status: task.status,
+      blocked: task.blocked,
+      blocked_reason: task.blocked_reason || '',
+      start_date: task.start_date,
+      due_date: task.due_date,
+      collaborator_ids: collaboratorIds
+    });
+    setIsCreating(false);
+    setShowModal(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingTask) return;
-    
+    if (!formData) return;
+
     setIsSaving(true);
     try {
-      await TaskService.updateTask(editingTask);
-      setEditingTask(null);
-      setIsCreating(false);
+      const taskData = {
+        title: formData.title,
+        description: formData.description || null,
+        section_id: formData.section_id,
+        owner_id: formData.owner_id,
+        supervisor_id: formData.supervisor_id || null,
+        status: formData.status,
+        blocked: formData.blocked,
+        blocked_reason: formData.blocked ? formData.blocked_reason : null,
+        start_date: formData.start_date,
+        due_date: formData.due_date
+      };
+
+      let taskId: string;
+
+      if (isCreating) {
+        const created = await TaskService.create(taskData);
+        if (!created) throw new Error('Failed to create task');
+        taskId = created.id;
+      } else {
+        await TaskService.update(formData.id!, taskData);
+        taskId = formData.id!;
+      }
+
+      // Update collaborators
+      if (isConfigured && supabase) {
+        // Remove existing collaborators
+        await supabase
+          .from('serhub_task_collaborators')
+          .delete()
+          .eq('task_id', taskId);
+
+        // Add new collaborators
+        if (formData.collaborator_ids.length > 0) {
+          const collaboratorInserts = formData.collaborator_ids.map(profileId => ({
+            task_id: taskId,
+            profile_id: profileId
+          }));
+          await supabase
+            .from('serhub_task_collaborators')
+            .insert(collaboratorInserts);
+        }
+      }
+
+      setShowModal(false);
+      setFormData(null);
       await fetchData();
     } catch (error) {
+      console.error('Failed to save task:', error);
       alert("Failed to save task.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCreateTask = () => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title: '',
-      description: '',
-      sectionId: sections[0]?.id || '',
-      assignedTo: users[0]?.id || 'u-mg', 
-      author: 'Manual',
-      dueDate: new Date().toISOString().split('T')[0],
-      duration: 7,
-      progress: 0
-    };
-    setEditingTask(newTask);
-    setIsCreating(true);
-  };
-
-  const formatMMDD = (dateStr: string) => {
+  const formatDate = (dateStr: string) => {
     if (!dateStr) return '--';
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${m}-${d}`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getProfileName = (profileId: string) => {
+    const profile = profiles.find(p => p.id === profileId);
+    return profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown';
+  };
+
+  const toggleCollaborator = (profileId: string) => {
+    if (!formData) return;
+    const ids = formData.collaborator_ids;
+    if (ids.includes(profileId)) {
+      setFormData({ ...formData, collaborator_ids: ids.filter(id => id !== profileId) });
+    } else {
+      setFormData({ ...formData, collaborator_ids: [...ids, profileId] });
+    }
   };
 
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-hit-blue">
         <Loader2 className="animate-spin mr-2" />
-        <span>Syncing Institutional Tasks...</span>
+        <span>Loading Tasks...</span>
       </div>
     );
   }
 
   return (
     <div className="flex h-full gap-8 bg-transparent">
+      {/* Sidebar Filters */}
       <div className="w-80 shrink-0 flex flex-col gap-6 overflow-y-auto pb-10">
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 shrink-0">
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Filter by Step</h3>
+          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Filter by Section</h3>
           <div className="space-y-2">
-            <button onClick={() => setSectionFilter('All')} className={`w-full text-left p-4 rounded-2xl text-sm font-black transition-all ${sectionFilter === 'All' ? 'bg-hit-dark text-white shadow-xl shadow-hit-dark/10' : 'text-gray-500 hover:bg-gray-50'}`}>All Project Steps</button>
+            <button onClick={() => setSectionFilter('All')} className={`w-full text-left p-4 rounded-2xl text-sm font-black transition-all ${sectionFilter === 'All' ? 'bg-hit-dark text-white shadow-xl shadow-hit-dark/10' : 'text-gray-500 hover:bg-gray-50'}`}>All Sections</button>
             <div className="h-px bg-gray-100 my-2"></div>
-            {sections.map(s => (
+            {sections.filter(s => s.level === 1).map(s => (
               <button key={s.id} onClick={() => setSectionFilter(s.id)} className={`w-full text-left p-4 rounded-2xl text-sm font-bold transition-all flex flex-col gap-1 border border-transparent ${sectionFilter === s.id ? 'bg-blue-50 text-hit-blue border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
                 <span className="text-[9px] font-black uppercase tracking-tighter opacity-60">{s.number}</span>
                 <span className="truncate">{s.title}</span>
@@ -155,173 +268,352 @@ const TasksManager = () => {
         </div>
 
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 shrink-0">
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Filter by Assigned</h3>
+          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Filter by Owner</h3>
           <div className="space-y-2">
-            <button onClick={() => setOwnerFilter('All')} className={`w-full text-left p-4 rounded-2xl text-sm font-black transition-all ${ownerFilter === 'All' ? 'bg-hit-blue text-white shadow-xl shadow-hit-blue/10' : 'text-gray-500 hover:bg-gray-50'}`}>All Task Owners</button>
+            <button onClick={() => setOwnerFilter('All')} className={`w-full text-left p-4 rounded-2xl text-sm font-black transition-all ${ownerFilter === 'All' ? 'bg-hit-blue text-white shadow-xl shadow-hit-blue/10' : 'text-gray-500 hover:bg-gray-50'}`}>All Owners</button>
             <div className="h-px bg-gray-100 my-2"></div>
-            {users.map(u => (
-              <button key={u.id} onClick={() => setOwnerFilter(u.id)} className={`w-full text-left p-3 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 border border-transparent ${ownerFilter === u.id ? 'bg-teal-50 text-hit-dark border-teal-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <UserAvatar name={u.name} size="sm" />
-                <span className="truncate">{u.name}</span>
+            {profiles.map(p => (
+              <button key={p.id} onClick={() => setOwnerFilter(p.id)} className={`w-full text-left p-3 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 border border-transparent ${ownerFilter === p.id ? 'bg-teal-50 text-hit-dark border-teal-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
+                <UserAvatar name={`${p.first_name} ${p.last_name}`} size="sm" />
+                <span className="truncate">{p.first_name} {p.last_name}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+        {/* Search Bar */}
         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex items-center gap-6">
-          <button 
-            onClick={handleCreateTask} 
+          <button
+            onClick={openCreateModal}
             className="w-12 h-12 shrink-0 flex items-center justify-center bg-hit-blue text-white rounded-2xl shadow-lg shadow-hit-blue/20 hover:bg-hit-dark transition-all active:scale-95"
             title="Create New Task"
           >
             <Plus size={24} />
           </button>
-          
+
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search tasks..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="w-full pl-12 pr-4 py-3 bg-gray-50/50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-hit-blue transition-all" 
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-gray-50/50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-hit-blue transition-all"
             />
           </div>
         </div>
-        
+
+        {/* Task List */}
         <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-10">
           {filteredTasks.length > 0 ? (
             filteredTasks.map(task => {
-              // Resolve assignedTo ID to actual User Name
-              const assignee = users.find(u => u.id === task.assignedTo);
-              const nameToDisplay = assignee?.name || (task.assignedTo === 'u-mg' ? 'Mikael Gorsky' : 'Institutional User');
-              
-              const status = getStatusLabel(task.progress);
-              const isDone = task.progress === 100;
-              const stepStyles = getStepStyles(task.sectionId);
+              const ownerName = getProfileName(task.owner_id);
+              const status = getStatusLabel(task.status, task.blocked);
+              const isDone = task.status === 100;
+              const stepStyles = getStepStyles(task.section_id);
+              const section = sections.find(s => s.id === task.section_id);
 
               return (
-                <div key={task.id} onClick={() => { setEditingTask({...task}); setIsCreating(false); }} className={`p-6 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer flex items-center gap-6 ${stepStyles} ${isDone ? 'opacity-70' : ''}`}>
+                <div
+                  key={task.id}
+                  onClick={() => openEditModal(task)}
+                  className={`p-6 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer flex items-center gap-6 ${stepStyles} ${isDone ? 'opacity-70' : ''}`}
+                >
                   <div className="w-16 shrink-0 text-center">
                     <span className="bg-hit-dark text-white text-[10px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
-                      {sections.find(s => s.id === task.sectionId)?.number.split(' ')[1] || '??'}
+                      {section?.number || '??'}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className={`text-lg font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>{task.title}</h4>
-                    <p className={`text-sm font-medium truncate ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>{task.description}</p>
-                    <div className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-widest mt-2">
-                      <Fingerprint size={12} className="text-gray-300" /> Author: {task.author}
-                    </div>
+                    <h4 className={`text-lg font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                      {task.title}
+                    </h4>
+                    <p className={`text-sm font-medium truncate ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {task.description}
+                    </p>
+                    {task.blocked && (
+                      <div className="flex items-center gap-2 text-xs text-red-600 mt-1">
+                        <AlertTriangle size={12} />
+                        <span className="font-bold">Blocked: {task.blocked_reason}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-12 shrink-0">
-                    <div className="w-16 flex flex-col items-center">
-                       <span className="text-[10px] font-black text-gray-400 uppercase mb-1">Due</span>
-                       <span className="text-sm font-black text-gray-800">{formatMMDD(task.dueDate)}</span>
+                  <div className="flex items-center gap-8 shrink-0">
+                    <div className="w-20 text-center">
+                      <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Due</span>
+                      <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
                     </div>
-                    <div className="w-56 flex items-center gap-4">
-                      <UserAvatar name={nameToDisplay} size="md" className="border-2 border-white/50 shadow-sm" />
+                    <div className="w-48 flex items-center gap-3">
+                      <UserAvatar name={ownerName} size="md" className="border-2 border-white/50 shadow-sm" />
                       <div className="min-w-0">
-                        <p className="text-sm font-black text-gray-900 truncate tracking-tight">{nameToDisplay}</p>
-                        <p className="text-[9px] font-black text-hit-blue uppercase tracking-widest opacity-60">Task Owner</p>
+                        <p className="text-sm font-black text-gray-900 truncate">{ownerName}</p>
+                        <p className="text-[9px] font-black text-hit-blue uppercase tracking-widest opacity-60">Owner</p>
                       </div>
                     </div>
-                    <div className="w-36">
-                       <div className={`text-center py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border bg-white shadow-sm ${status.color}`}>
-                          {status.label}
-                       </div>
+                    <div className="w-28">
+                      <div className={`text-center py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border bg-white shadow-sm ${status.color}`}>
+                        {status.label}
+                      </div>
                     </div>
-                    <div className="w-10 flex justify-end">
-                       <ChevronRight className="text-gray-200 group-hover:text-hit-blue transition-colors" />
-                    </div>
+                    <ChevronRight className="text-gray-200 group-hover:text-hit-blue transition-colors" />
                   </div>
                 </div>
               );
             })
           ) : (
             <div className="h-full flex flex-col items-center justify-center p-20 text-center text-gray-400 bg-white rounded-[2rem] shadow-sm">
-               <CheckCircle2 size={64} className="text-gray-100 mb-6" />
-               <h3 className="text-xl font-black text-gray-700 uppercase tracking-tight">Empty Workspace</h3>
-               <p className="text-sm max-w-xs mt-2 font-medium">No tasks found matching current filters.</p>
+              <CheckCircle2 size={64} className="text-gray-100 mb-6" />
+              <h3 className="text-xl font-black text-gray-700 uppercase tracking-tight">No Tasks Found</h3>
+              <p className="text-sm max-w-xs mt-2 font-medium">No tasks match your current filters.</p>
             </div>
           )}
         </div>
       </div>
 
-      {editingTask && (
+      {/* Task Modal */}
+      {showModal && formData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-end bg-hit-dark/30 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-gray-50 h-screen w-full max-w-4xl shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 ease-out">
+            {/* Modal Header */}
             <div className="bg-white px-10 py-6 border-b border-gray-200 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-6">
-                 <button onClick={() => setEditingTask(null)} className="p-2.5 hover:bg-gray-100 rounded-2xl text-gray-400 hover:text-hit-blue transition-all"><X size={24} /></button>
-                 <div className="h-10 w-px bg-gray-100"></div>
-                 <div>
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">{isCreating ? 'Create Task' : 'Edit Task'}</h2>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">ID: {editingTask.id}</p>
-                 </div>
+                <button onClick={() => setShowModal(false)} className="p-2.5 hover:bg-gray-100 rounded-2xl text-gray-400 hover:text-hit-blue transition-all">
+                  <X size={24} />
+                </button>
+                <div className="h-10 w-px bg-gray-100"></div>
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                    {isCreating ? 'Create Task' : 'Edit Task'}
+                  </h2>
+                  {formData.id && (
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">
+                      ID: {formData.id.slice(0, 8)}...
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-4">
-                 <button type="button" onClick={() => setEditingTask(null)} className="py-3 px-8 bg-white border border-gray-200 rounded-2xl text-gray-500 font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all">Discard</button>
-                 <button onClick={handleUpdateTask} disabled={isSaving} className="py-3 px-8 bg-hit-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-hit-dark transition-all flex items-center gap-2 shadow-xl shadow-hit-blue/20">
-                   {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                   {isCreating ? 'Save Task' : 'Update Task'}
-                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="py-3 px-8 bg-white border border-gray-200 rounded-2xl text-gray-500 font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving || !formData.title || !formData.section_id || !formData.owner_id}
+                  className="py-3 px-8 bg-hit-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-hit-dark transition-all flex items-center gap-2 shadow-xl shadow-hit-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  {isCreating ? 'Create Task' : 'Save Changes'}
+                </button>
               </div>
             </div>
 
+            {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-12">
-               <div className="max-w-2xl mx-auto space-y-8">
-                 <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Title</label>
-                    <input type="text" required placeholder="Institutional Task Title" value={editingTask.title} onChange={e => setEditingTask({...editingTask, title: e.target.value})} className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-lg font-black text-gray-900 focus:ring-2 focus:ring-hit-blue transition-all" />
-                 </div>
-                 <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description</label>
-                    <textarea rows={4} required placeholder="Detailed task objectives..." value={editingTask.description} onChange={e => setEditingTask({...editingTask, description: e.target.value})} className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-gray-600 focus:ring-2 focus:ring-hit-blue transition-all" />
-                 </div>
-                 <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Step</label>
-                      <select value={editingTask.sectionId} onChange={e => setEditingTask({...editingTask, sectionId: e.target.value})} className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue">
-                        {sections.map(s => <option key={s.id} value={s.id}>{s.number}: {s.title}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Owner (Identity)</label>
-                      <select value={editingTask.assignedTo} onChange={e => setEditingTask({...editingTask, assignedTo: e.target.value})} className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue">
-                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                      </select>
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Author</label>
-                      <input type="text" value={editingTask.author} onChange={e => setEditingTask({...editingTask, author: e.target.value})} className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 focus:ring-2 focus:ring-hit-blue" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Deadline</label>
-                      <input type="date" required value={editingTask.dueDate} onChange={e => setEditingTask({...editingTask, dueDate: e.target.value})} className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue" />
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Duration (Days)</label>
-                      <input type="number" required value={editingTask.duration} onChange={e => setEditingTask({...editingTask, duration: parseInt(e.target.value)})} className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue" />
-                    </div>
-                 </div>
-                 <div className="bg-white rounded-[2rem] p-10 border border-gray-100">
-                    <div className="flex justify-between items-center mb-4">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Progress: {editingTask.progress}%</label>
-                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${getStatusLabel(editingTask.progress).color}`}>{getStatusLabel(editingTask.progress).label}</span>
-                    </div>
-                    <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden mb-6">
-                        <div className={`h-full transition-all duration-500 ${getStatusLabel(editingTask.progress).bar}`} style={{width: `${editingTask.progress}%`}}></div>
-                    </div>
-                    <input type="range" min="0" max="100" value={editingTask.progress} onChange={e => setEditingTask({...editingTask, progress: parseInt(e.target.value)})} className="w-full h-1 bg-gray-200 rounded-full appearance-none cursor-pointer accent-hit-blue" />
-                 </div>
-               </div>
+              <div className="max-w-2xl mx-auto space-y-8">
+                {/* Title */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                    Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Task title..."
+                    value={formData.title}
+                    onChange={e => setFormData({...formData, title: e.target.value})}
+                    className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-lg font-black text-gray-900 focus:ring-2 focus:ring-hit-blue transition-all"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Task description..."
+                    value={formData.description}
+                    onChange={e => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium text-gray-600 focus:ring-2 focus:ring-hit-blue transition-all"
+                  />
+                </div>
+
+                {/* Section & Owner */}
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                      Section <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.section_id}
+                      onChange={e => setFormData({...formData, section_id: e.target.value})}
+                      className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue"
+                    >
+                      <option value="">Select section...</option>
+                      {sections.map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.number}: {s.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                      Owner <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.owner_id}
+                      onChange={e => setFormData({...formData, owner_id: e.target.value})}
+                      className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue"
+                    >
+                      <option value="">Select owner...</option>
+                      {profiles.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.first_name} {p.last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Supervisor */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Supervisor</label>
+                  <select
+                    value={formData.supervisor_id}
+                    onChange={e => setFormData({...formData, supervisor_id: e.target.value})}
+                    className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue"
+                  >
+                    <option value="">No supervisor</option>
+                    {profiles.filter(p => p.system_role === 'admin' || p.system_role === 'supervisor').map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.first_name} {p.last_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Start Date & Due Date */}
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                      Start Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.start_date}
+                      onChange={e => setFormData({...formData, start_date: e.target.value})}
+                      className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                      Due Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.due_date}
+                      onChange={e => setFormData({...formData, due_date: e.target.value})}
+                      className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue"
+                    />
+                  </div>
+                </div>
+
+                {/* Progress Slider */}
+                <div className="bg-white rounded-[2rem] p-8 border border-gray-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      Progress: {formData.status}%
+                    </label>
+                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${getStatusLabel(formData.status, formData.blocked).color}`}>
+                      {getStatusLabel(formData.status, formData.blocked).label}
+                    </span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden mb-4">
+                    <div
+                      className={`h-full transition-all duration-500 ${getStatusLabel(formData.status, formData.blocked).bar}`}
+                      style={{width: `${formData.status}%`}}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={formData.status}
+                    onChange={e => setFormData({...formData, status: parseInt(e.target.value)})}
+                    className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-hit-blue"
+                  />
+                </div>
+
+                {/* Blocked */}
+                <div className="bg-white rounded-[2rem] p-8 border border-gray-100">
+                  <div className="flex items-center gap-4 mb-4">
+                    <input
+                      type="checkbox"
+                      id="blocked"
+                      checked={formData.blocked}
+                      onChange={e => setFormData({...formData, blocked: e.target.checked})}
+                      className="w-5 h-5 rounded-lg border-gray-300 text-red-600 focus:ring-red-500"
+                    />
+                    <label htmlFor="blocked" className="text-sm font-black text-gray-700 flex items-center gap-2">
+                      <AlertTriangle size={16} className="text-red-500" />
+                      Task is Blocked
+                    </label>
+                  </div>
+                  {formData.blocked && (
+                    <input
+                      type="text"
+                      placeholder="Reason for blocking..."
+                      value={formData.blocked_reason}
+                      onChange={e => setFormData({...formData, blocked_reason: e.target.value})}
+                      className="w-full px-6 py-4 bg-red-50 border border-red-100 rounded-2xl text-sm font-medium text-red-800 focus:ring-2 focus:ring-red-500 transition-all"
+                    />
+                  )}
+                </div>
+
+                {/* Collaborators */}
+                <div className="bg-white rounded-[2rem] p-8 border border-gray-100">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Users size={14} />
+                    Collaborators
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {profiles.filter(p => p.id !== formData.owner_id).map(p => {
+                      const isSelected = formData.collaborator_ids.includes(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => toggleCollaborator(p.id)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                            isSelected
+                              ? 'bg-teal-100 text-teal-800 border-2 border-teal-300'
+                              : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
+                          }`}
+                        >
+                          <UserAvatar name={`${p.first_name} ${p.last_name}`} size="xs" />
+                          {p.first_name} {p.last_name}
+                          {isSelected && <CheckCircle2 size={14} className="text-teal-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {formData.collaborator_ids.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-3">
+                      {formData.collaborator_ids.length} collaborator{formData.collaborator_ids.length > 1 ? 's' : ''} selected
+                    </p>
+                  )}
+                </div>
+
+              </div>
             </div>
           </div>
         </div>

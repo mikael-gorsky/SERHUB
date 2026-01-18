@@ -11,7 +11,7 @@ const COLORS = [
 
 interface UserAvatarProps {
   name?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
@@ -27,7 +27,10 @@ const UserAvatar = ({ name = 'User', size = 'md', className = '' }: UserAvatarPr
   let sizeClasses = 'w-10 h-10';
   let iconSize = 20;
 
-  if (size === 'sm') {
+  if (size === 'xs') {
+    sizeClasses = 'w-6 h-6';
+    iconSize = 12;
+  } else if (size === 'sm') {
     sizeClasses = 'w-8 h-8';
     iconSize = 16;
   } else if (size === 'lg') {
