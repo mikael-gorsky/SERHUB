@@ -31,10 +31,15 @@ const Login = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const users = await UserService.getAllAsUsers();
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout')), 5000)
+        );
+        const usersPromise = UserService.getAllAsUsers();
+        const users = await Promise.race([usersPromise, timeoutPromise]) as any;
         setAvailableUsers(users);
       } catch (err) {
-        console.warn("Could not fetch user list for dropdown.");
+        console.warn("Could not fetch user list for dropdown:", err);
       } finally {
         setLoadingUsers(false);
       }
@@ -111,30 +116,41 @@ const Login = () => {
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className={`block text-xs font-medium text-${theme.textSecondary} mb-2`}>User</label>
+              <label className={`block text-xs font-medium text-${theme.textSecondary} mb-2`}>Email</label>
               <div className="relative">
                 <UserCheck className={`absolute left-4 top-1/2 -translate-y-1/2 text-${theme.textMuted}`} size={18} />
-                <select
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loadingUsers}
-                  className={`w-full pl-11 pr-10 py-3 bg-${theme.bgPrimary} border border-${theme.border} rounded-xl text-sm text-${theme.textPrimary} focus:ring-2 focus:ring-${theme.primary} focus:border-transparent appearance-none transition-all cursor-pointer disabled:opacity-50`}
-                  required
-                >
-                  <option value="" disabled>Select user...</option>
-                  {availableUsers.map(user => (
-                    <option key={user.id} value={user.email}>
-                      {user.name} ({user.role})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 text-${theme.textMuted} pointer-events-none`} size={16} />
+                {loadingUsers ? (
+                  <div className={`w-full pl-11 pr-4 py-3 bg-${theme.bgPrimary} border border-${theme.border} rounded-xl text-sm text-${theme.textMuted} flex items-center gap-2`}>
+                    <Loader2 className="animate-spin" size={14} /> Loading users...
+                  </div>
+                ) : availableUsers.length > 0 ? (
+                  <>
+                    <select
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`w-full pl-11 pr-10 py-3 bg-${theme.bgPrimary} border border-${theme.border} rounded-xl text-sm text-${theme.textPrimary} focus:ring-2 focus:ring-${theme.primary} focus:border-transparent appearance-none transition-all cursor-pointer`}
+                      required
+                    >
+                      <option value="" disabled>Select user...</option>
+                      {availableUsers.map(user => (
+                        <option key={user.id} value={user.email}>
+                          {user.name} ({user.role})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 text-${theme.textMuted} pointer-events-none`} size={16} />
+                  </>
+                ) : (
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full pl-11 pr-4 py-3 bg-${theme.bgPrimary} border border-${theme.border} rounded-xl text-sm text-${theme.textPrimary} focus:ring-2 focus:ring-${theme.primary} focus:border-transparent transition-all`}
+                    placeholder="Enter your email"
+                    required
+                  />
+                )}
               </div>
-              {loadingUsers && (
-                <p className={`text-xs text-${theme.primary} mt-2 flex items-center gap-2`}>
-                  <Loader2 className="animate-spin" size={12} /> Loading users...
-                </p>
-              )}
             </div>
 
             <div>
