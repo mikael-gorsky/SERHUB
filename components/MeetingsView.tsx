@@ -282,6 +282,16 @@ const MeetingsView = () => {
               className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 transition-all"
             />
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={showPast}
+              onChange={(e) => setShowPast(e.target.checked)}
+              className="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
+            />
+            <span className="text-sm text-gray-600 whitespace-nowrap">Show past</span>
+          </label>
         </div>
 
         {/* Meetings List */}
