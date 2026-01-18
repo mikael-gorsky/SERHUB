@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Loader2, Box, LogOut, Bell } from 'lucide-react';
+import { Loader2, Box, LogOut, Bell, List, LayoutGrid } from 'lucide-react';
 import Login from './components/Login';
 import UserAvatar from './components/UserAvatar';
 import SectionTree from './components/SectionTree';
@@ -8,6 +8,7 @@ import SectionDetail from './components/SectionDetail';
 import TabNavigation, { TabType } from './components/TabNavigation';
 import TasksManager from './components/TasksManager';
 import MeetingsView from './components/MeetingsView';
+import ProjectCalendar from './components/ProjectCalendar';
 import TeamManager from './components/TeamManager';
 import SettingsPanel from './components/SettingsPanel';
 import AppLogo from './components/AppLogo';
@@ -85,6 +86,7 @@ const MainView = () => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
+  const [calendarViewMode, setCalendarViewMode] = useState<'list' | 'calendar'>('list');
 
   return (
     <div className={`flex flex-col h-screen ${theme.bgPrimary}`}>
@@ -131,8 +133,46 @@ const MainView = () => {
         )}
 
         {activeTab === 'meetings' && (
-          <div className="h-full overflow-auto">
-            <MeetingsView />
+          <div className="h-full flex flex-col overflow-hidden">
+            {/* View Mode Toggle */}
+            <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between shrink-0">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {calendarViewMode === 'list' ? 'Meetings' : 'Calendar'}
+              </h2>
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setCalendarViewMode('list')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all ${
+                    calendarViewMode === 'list'
+                      ? 'bg-white text-teal-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <List size={14} /> Meetings
+                </button>
+                <button
+                  onClick={() => setCalendarViewMode('calendar')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all ${
+                    calendarViewMode === 'calendar'
+                      ? 'bg-white text-teal-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  <LayoutGrid size={14} /> Calendar
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto">
+              {calendarViewMode === 'list' ? (
+                <MeetingsView />
+              ) : (
+                <div className="h-full p-6">
+                  <ProjectCalendar />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
