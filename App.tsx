@@ -14,6 +14,7 @@ import SettingsPanel from './components/SettingsPanel';
 import AppLogo from './components/AppLogo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { SectionsProvider, useSections } from './contexts/SectionsContext';
 import { Section } from './types';
 
 // --- App Header with Institution Info ---
@@ -194,14 +195,20 @@ const MainView = () => {
 
 // --- Private Route Wrapper ---
 const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { loading: sectionsLoading } = useSections();
   const { theme } = useTheme();
 
-  if (loading) {
+  // Wait for both auth AND sections to load
+  const isLoading = authLoading || (currentUser && sectionsLoading);
+
+  if (isLoading) {
     return (
       <div className={`h-screen flex flex-col items-center justify-center ${theme.bgPrimary} text-${theme.primary}`}>
         <Loader2 className="animate-spin mb-4" size={48} />
-        <span className="text-sm font-semibold uppercase tracking-widest opacity-60">Loading...</span>
+        <span className="text-sm font-semibold uppercase tracking-widest opacity-60">
+          {authLoading ? 'Authenticating...' : 'Loading data...'}
+        </span>
       </div>
     );
   }
@@ -218,16 +225,18 @@ const App = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <HashRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/*" element={
-              <PrivateRoute>
-                <MainView />
-              </PrivateRoute>
-            } />
-          </Routes>
-        </HashRouter>
+        <SectionsProvider>
+          <HashRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={
+                <PrivateRoute>
+                  <MainView />
+                </PrivateRoute>
+              } />
+            </Routes>
+          </HashRouter>
+        </SectionsProvider>
       </AuthProvider>
     </ThemeProvider>
   );

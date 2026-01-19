@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, FileText, Globe, ChevronRight } from 'lucide-react';
 import { Section } from '../types';
-import { getSectionsHierarchy, getSectionProgress } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useSections } from '../contexts/SectionsContext';
 
 interface SectionTreeProps {
   selectedSectionId: string | null;
@@ -10,27 +9,13 @@ interface SectionTreeProps {
 }
 
 const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSection }) => {
-  const { currentUser } = useAuth();
-  const [sections, setSections] = useState<Section[]>([]);
+  // Use pre-loaded sections from context
+  const { sections, totalProgress, loading } = useSections();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [totalProgress, setTotalProgress] = useState(0);
-  const [loading, setLoading] = useState(true);
 
+  // Expand all sections when they load
   useEffect(() => {
-    // Only load sections after user is authenticated
-    if (currentUser) {
-      loadSections();
-    }
-  }, [currentUser]);
-
-  const loadSections = async () => {
-    try {
-      console.log('Loading sections...');
-      const hierarchy = await getSectionsHierarchy();
-      console.log('Sections loaded:', hierarchy);
-      setSections(hierarchy);
-
-      // Expand all by default for better UX
+    if (sections.length > 0 && expandedIds.size === 0) {
       const expanded = new Set<string>();
       const expandAll = (sects: Section[]) => {
         sects.forEach(s => {
@@ -38,22 +23,10 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
           if (s.children) expandAll(s.children);
         });
       };
-      expandAll(hierarchy);
+      expandAll(sections);
       setExpandedIds(expanded);
-
-      // Calculate total progress (average of level 1 sections)
-      let totalProg = 0;
-      for (const section of hierarchy) {
-        const prog = await getSectionProgress(section.id);
-        totalProg += prog;
-      }
-      setTotalProgress(hierarchy.length > 0 ? Math.round(totalProg / hierarchy.length) : 0);
-    } catch (error) {
-      console.error('Error loading sections:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [sections]);
 
   const toggleExpand = (sectionId: string) => {
     const newExpanded = new Set(expandedIds);
