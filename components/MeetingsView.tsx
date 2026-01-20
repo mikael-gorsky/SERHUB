@@ -45,7 +45,7 @@ interface MeetingFormData {
 }
 
 const MeetingsView = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, currentProfile } = useAuth();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -263,7 +263,7 @@ const MeetingsView = () => {
       <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
-          {canCreateMeetings(currentUser) && (
+          {canCreateMeetings(currentProfile) && (
             <button
               onClick={openCreateModal}
               className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
@@ -293,7 +293,7 @@ const MeetingsView = () => {
               <MeetingCard
                 key={meeting.id}
                 meeting={meeting}
-                onClick={canEditMeetings(currentUser) ? () => openEditModal(meeting) : undefined}
+                onClick={canEditMeetings(currentProfile) ? () => openEditModal(meeting) : undefined}
               />
             ))
           ) : (

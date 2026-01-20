@@ -38,7 +38,7 @@ interface TaskFormData {
 }
 
 const TasksManager = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, currentProfile } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -282,7 +282,7 @@ const TasksManager = () => {
     const stepStyles = getStepStyles(task.section_id);
     const section = sections.find(s => s.id === task.section_id);
     const descriptionLine = getFirstLine(task.description);
-    const canEdit = canEditTasks(currentUser);
+    const canEdit = canEditTasks(currentProfile);
 
     return (
       <div
@@ -427,7 +427,7 @@ const TasksManager = () => {
       <div className="flex-1 flex flex-col gap-6 overflow-hidden">
         {/* Search Bar */}
         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex items-center gap-6">
-          {canCreateTasks(currentUser) && (
+          {canCreateTasks(currentProfile) && (
             <button
               onClick={openCreateModal}
               className="w-12 h-12 shrink-0 flex items-center justify-center bg-hit-blue text-white rounded-2xl shadow-lg shadow-hit-blue/20 hover:bg-hit-dark transition-all active:scale-95"
