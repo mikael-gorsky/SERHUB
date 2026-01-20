@@ -80,8 +80,8 @@ const TeamManager = () => {
     fetchData();
   }, []);
 
-  // Check if current user can manage (admin or supervisor)
-  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'supervisor';
+  // Only admins can manage contributors
+  const canManage = currentUser?.role === 'admin';
 
   const handleRowClick = (profile: Profile) => {
     setFormMode('edit');
@@ -222,13 +222,15 @@ const TeamManager = () => {
                 className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hit-blue"
               />
             </div>
-            <button
-              onClick={handleAddClick}
-              className="w-10 h-10 flex items-center justify-center bg-hit-blue text-white rounded-xl hover:bg-hit-dark transition-colors shadow-lg shadow-hit-blue/20"
-              title="Add Contributor"
-            >
-              <Plus size={20} />
-            </button>
+            {canManage && (
+              <button
+                onClick={handleAddClick}
+                className="w-10 h-10 flex items-center justify-center bg-hit-blue text-white rounded-xl hover:bg-hit-dark transition-colors shadow-lg shadow-hit-blue/20"
+                title="Add Contributor"
+              >
+                <Plus size={20} />
+              </button>
+            )}
           </div>
         </div>
 
