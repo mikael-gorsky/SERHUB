@@ -9,7 +9,9 @@ import {
   CheckCircle2,
   Plus,
   AlertTriangle,
-  Users
+  Users,
+  Circle,
+  PlayCircle
 } from 'lucide-react';
 import { TaskService } from '../services/TaskService';
 import { SectionService } from '../services/SectionService';
@@ -43,6 +45,7 @@ const TasksManager = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
+  const [progressFilter, setProgressFilter] = useState<'All' | 'NotStarted' | 'InProgress'>('All');
   const [sectionFilter, setSectionFilter] = useState('All');
   const [ownerFilter, setOwnerFilter] = useState('All');
 
@@ -113,11 +116,14 @@ const TasksManager = () => {
     return tasks.filter(task => {
       const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesProgress = progressFilter === 'All' ||
+                             (progressFilter === 'NotStarted' && task.status === 0) ||
+                             (progressFilter === 'InProgress' && task.status > 0);
       const matchesSection = sectionFilter === 'All' || task.section_id === sectionFilter;
       const matchesOwner = ownerFilter === 'All' || task.owner_id === ownerFilter;
-      return matchesSearch && matchesSection && matchesOwner;
+      return matchesSearch && matchesProgress && matchesSection && matchesOwner;
     });
-  }, [tasks, searchTerm, sectionFilter, ownerFilter]);
+  }, [tasks, searchTerm, progressFilter, sectionFilter, ownerFilter]);
 
   const orgTasks = useMemo(() => filteredTasks.filter(t => isOrgSection(t.section_id)), [filteredTasks, sections]);
   const reportTasks = useMemo(() => filteredTasks.filter(t => !isOrgSection(t.section_id)), [filteredTasks, sections]);
@@ -353,6 +359,33 @@ const TasksManager = () => {
     <div className="flex h-full gap-8 bg-transparent">
       {/* Sidebar Filters */}
       <div className="w-80 shrink-0 flex flex-col gap-6 overflow-y-auto pb-10">
+        {/* Progress Filter */}
+        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 shrink-0">
+          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Filter by Progress</h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => setProgressFilter('All')}
+              className={`w-full text-left p-4 rounded-2xl text-sm font-black transition-all ${progressFilter === 'All' ? 'bg-gray-800 text-white shadow-xl shadow-gray-800/10' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              All Tasks
+            </button>
+            <button
+              onClick={() => setProgressFilter('NotStarted')}
+              className={`w-full text-left p-4 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 border border-transparent ${progressFilter === 'NotStarted' ? 'bg-slate-100 text-slate-700 border-slate-200 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              <Circle size={18} className={progressFilter === 'NotStarted' ? 'text-slate-500' : 'text-gray-300'} />
+              <span>Not Started (0%)</span>
+            </button>
+            <button
+              onClick={() => setProgressFilter('InProgress')}
+              className={`w-full text-left p-4 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 border border-transparent ${progressFilter === 'InProgress' ? 'bg-emerald-50 text-emerald-700 border-emerald-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              <PlayCircle size={18} className={progressFilter === 'InProgress' ? 'text-emerald-500' : 'text-gray-300'} />
+              <span>In Progress (&gt;0%)</span>
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 shrink-0">
           <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-6">Filter by Section</h3>
           <div className="space-y-2">
