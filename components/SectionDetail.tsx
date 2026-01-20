@@ -60,7 +60,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
     }
   };
 
-  const canAddTask = currentProfile?.system_role === 'admin' || currentProfile?.system_role === 'coordinator';
+  const canAddTask = currentProfile?.role === 'admin' || currentProfile?.role === 'supervisor';
 
   const getStatusLabel = (progress: number, blocked: boolean) => {
     if (blocked) return { label: 'Blocked', color: 'text-red-600 bg-red-50 border-red-100', bar: 'bg-red-500' };
@@ -73,7 +73,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
 
   const getProfileName = (profileId: string) => {
     const profile = profiles.find(p => p.id === profileId);
-    return profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown';
+    return profile ? profile.name : 'Unknown';
   };
 
   const openEditModal = async (task: Task) => {
@@ -386,7 +386,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                       <option value="">Select owner...</option>
                       {profiles.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.first_name} {p.last_name}
+                          {p.name}
                         </option>
                       ))}
                     </select>
@@ -402,9 +402,9 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                     className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="">No supervisor</option>
-                    {profiles.filter(p => p.system_role === 'admin' || p.system_role === 'supervisor').map(p => (
+                    {profiles.filter(p => p.role === 'admin' || p.role === 'supervisor').map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.first_name} {p.last_name}
+                        {p.name}
                       </option>
                     ))}
                   </select>
@@ -510,8 +510,8 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                               : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
                           }`}
                         >
-                          <UserAvatar name={`${p.first_name} ${p.last_name}`} size="xs" />
-                          {p.first_name} {p.last_name}
+                          <UserAvatar name={p.name} size="xs" />
+                          {p.name}
                           {isSelected && <CheckCircle2 size={14} className="text-teal-600" />}
                         </button>
                       );

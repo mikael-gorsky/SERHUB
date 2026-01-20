@@ -26,10 +26,11 @@ export const useAuth = () => {
 // Helper to convert Profile to User for display
 const profileToUser = (profile: Profile): User => ({
   id: profile.id,
-  name: `${profile.first_name} ${profile.last_name}`,
+  name: profile.name,
   email: profile.email,
-  role: profile.system_role,
-  avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.first_name + ' ' + profile.last_name)}&background=005695&color=fff`
+  role: profile.role,
+  isUser: profile.is_user,
+  avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=005695&color=fff`
 });
 
 export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
@@ -110,7 +111,8 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       id: supabaseUser.id,
       name: fallbackName.charAt(0).toUpperCase() + fallbackName.slice(1),
       email: supabaseUser.email || '',
-      role: 'collaborator' as SystemRole,
+      role: 'contributor' as SystemRole,
+      isUser: true,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=005695&color=fff`
     };
 
@@ -156,12 +158,10 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
     // Guest mode for development - simulates admin user
     const guestProfile: Profile = {
       id: 'guest-dev',
+      name: 'Mikael Gorsky',
       email: 'MikaelG@hit.ac.il',
-      first_name: 'Mikael',
-      last_name: 'Gorsky',
-      organization_role: 'department_faculty',
-      system_role: 'admin',  // admin | supervisor | collaborator
-      is_active: true,
+      is_user: true,
+      role: 'admin',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

@@ -4,27 +4,17 @@
 // USER & PROFILE TYPES
 // ============================================
 
-export type SystemRole = 'admin' | 'supervisor' | 'collaborator';
-
-export type OrganizationRole =
-  | 'institution_management'
-  | 'parent_unit'
-  | 'department_faculty'
-  | 'adjunct_faculty'
-  | 'student'
-  | 'administrative_staff';
+export type SystemRole = 'admin' | 'supervisor' | 'contributor';
 
 export interface Profile {
   id: string;
+  name: string;
   email: string;
-  first_name: string;
-  last_name: string;
-  title?: string;
-  organization_role?: OrganizationRole;
-  system_role: SystemRole;
-  department?: string;
+  is_user: boolean;
+  description?: string;
+  role: SystemRole;
+  other_contact?: string;
   avatar_url?: string;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +25,7 @@ export interface User {
   name: string;
   email: string;
   role: SystemRole;
+  isUser: boolean;
   avatar?: string;
 }
 

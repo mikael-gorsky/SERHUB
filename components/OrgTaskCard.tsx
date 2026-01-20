@@ -44,10 +44,7 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
   const getOwnerName = () => {
     if (task.owner) {
       const owner = task.owner as Profile;
-      if (owner.title) {
-        return `${owner.title} ${owner.first_name} ${owner.last_name}`;
-      }
-      return `${owner.first_name} ${owner.last_name}`;
+      return owner.name;
     }
     return null;
   };

@@ -74,8 +74,7 @@ export const getProfiles = async (): Promise<Profile[]> => {
   const { data, error } = await supabase
     .from('serhub_profiles')
     .select('*')
-    .eq('is_active', true)
-    .order('last_name');
+    .order('name');
   if (error) {
     console.error('Error fetching profiles:', error);
     return [];
@@ -446,7 +445,7 @@ export const getUpcomingDeadlines = async (days: number = 7): Promise<Task[]> =>
     .from('serhub_tasks')
     .select(`
       *,
-      owner:serhub_profiles!owner_id(first_name, last_name),
+      owner:serhub_profiles!owner_id(id, name, role, is_user),
       section:serhub_sections!section_id(number, title)
     `)
     .gte('due_date', today)
@@ -468,7 +467,7 @@ export const getOverdueTasks = async (): Promise<Task[]> => {
     .from('serhub_tasks')
     .select(`
       *,
-      owner:serhub_profiles!owner_id(first_name, last_name),
+      owner:serhub_profiles!owner_id(id, name, role, is_user),
       section:serhub_sections!section_id(number, title)
     `)
     .lt('due_date', today)
@@ -487,7 +486,7 @@ export const getBlockedTasks = async (): Promise<Task[]> => {
     .from('serhub_tasks')
     .select(`
       *,
-      owner:serhub_profiles!owner_id(first_name, last_name),
+      owner:serhub_profiles!owner_id(id, name, role, is_user),
       section:serhub_sections!section_id(number, title)
     `)
     .eq('blocked', true)

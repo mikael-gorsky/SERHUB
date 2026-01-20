@@ -12,13 +12,15 @@ import { supabase, isConfigured } from '../lib/supabase';
 // Helper to convert Profile to User display object
 export const profileToUser = (profile: Profile): User => ({
   id: profile.id,
-  name: `${profile.first_name} ${profile.last_name}`,
+  name: profile.name,
   email: profile.email,
-  role: profile.system_role,
-  avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.first_name + ' ' + profile.last_name)}&background=005695&color=fff`
+  role: profile.role,
+  isUser: profile.is_user,
+  avatar: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=005695&color=fff`
 });
 
 export const UserService = {
+  // Get all profiles (both users and non-users)
   getAll: async (): Promise<Profile[]> => {
     console.log('UserService.getAll called, isConfigured:', isConfigured, 'supabase:', !!supabase);
     if (!isConfigured || !supabase) {
@@ -27,15 +29,29 @@ export const UserService = {
     const { data, error } = await supabase
       .from('serhub_profiles')
       .select('*')
-      .eq('is_active', true)
-      .order('last_name');
+      .order('name');
     console.log('UserService.getAll result:', { count: data?.length, error });
     if (error) throw error;
     return data || [];
   },
 
+  // Get only login-capable users (for login dropdown)
+  getLoginUsers: async (): Promise<Profile[]> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .select('*')
+      .eq('is_user', true)
+      .order('name');
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Get all as User display objects (login users only)
   getAllAsUsers: async (): Promise<User[]> => {
-    const profiles = await UserService.getAll();
+    const profiles = await UserService.getLoginUsers();
     return profiles.map(profileToUser);
   },
 
@@ -79,13 +95,13 @@ export const UserService = {
     return data;
   },
 
-  updateSystemRole: async (userId: string, newRole: SystemRole): Promise<Profile | null> => {
+  updateRole: async (userId: string, newRole: SystemRole): Promise<Profile | null> => {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
     const { data, error } = await supabase
       .from('serhub_profiles')
-      .update({ system_role: newRole })
+      .update({ role: newRole })
       .eq('id', userId)
       .select()
       .single();
@@ -93,31 +109,7 @@ export const UserService = {
     return data;
   },
 
-  deactivateUser: async (userId: string): Promise<boolean> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    const { error } = await supabase
-      .from('serhub_profiles')
-      .update({ is_active: false })
-      .eq('id', userId);
-    if (error) throw error;
-    return true;
-  },
-
-  reactivateUser: async (userId: string): Promise<boolean> => {
-    if (!isConfigured || !supabase) {
-      throw new Error("Database not configured.");
-    }
-    const { error } = await supabase
-      .from('serhub_profiles')
-      .update({ is_active: true })
-      .eq('id', userId);
-    if (error) throw error;
-    return true;
-  },
-
-  // Get users by role
+  // Get profiles by role
   getByRole: async (role: SystemRole): Promise<Profile[]> => {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
@@ -125,14 +117,13 @@ export const UserService = {
     const { data, error } = await supabase
       .from('serhub_profiles')
       .select('*')
-      .eq('system_role', role)
-      .eq('is_active', true)
-      .order('last_name');
+      .eq('role', role)
+      .order('name');
     if (error) throw error;
     return data || [];
   },
 
-  // Search users by name
+  // Search profiles by name or email
   search: async (query: string): Promise<Profile[]> => {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
@@ -140,10 +131,54 @@ export const UserService = {
     const { data, error } = await supabase
       .from('serhub_profiles')
       .select('*')
-      .eq('is_active', true)
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
-      .order('last_name');
+      .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+      .order('name');
     if (error) throw error;
     return data || [];
+  },
+
+  // Create a new non-user collaborator
+  createCollaborator: async (collaborator: {
+    name: string;
+    email: string;
+    description?: string;
+    other_contact?: string;
+    role?: SystemRole;
+  }): Promise<Profile | null> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    const { data, error } = await supabase
+      .from('serhub_profiles')
+      .insert({
+        name: collaborator.name,
+        email: collaborator.email,
+        description: collaborator.description || null,
+        other_contact: collaborator.other_contact || null,
+        role: collaborator.role || 'contributor',
+        is_user: false
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // Delete a non-user collaborator (only non-users can be deleted)
+  deleteCollaborator: async (profileId: string): Promise<boolean> => {
+    if (!isConfigured || !supabase) {
+      throw new Error("Database not configured.");
+    }
+    // First check if it's a non-user
+    const profile = await UserService.getById(profileId);
+    if (!profile) throw new Error("Profile not found");
+    if (profile.is_user) throw new Error("Cannot delete a user account. Only non-user collaborators can be deleted.");
+
+    const { error } = await supabase
+      .from('serhub_profiles')
+      .delete()
+      .eq('id', profileId);
+    if (error) throw error;
+    return true;
   }
 };

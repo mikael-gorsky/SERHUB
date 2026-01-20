@@ -542,8 +542,8 @@ const MeetingsView = () => {
                             : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
                         }`}
                       >
-                        <UserAvatar name={`${p.first_name} ${p.last_name}`} size="xs" />
-                        {p.first_name} {p.last_name}
+                        <UserAvatar name={p.name} size="xs" />
+                        {p.name}
                         {isSelected && <CheckCircle2 size={12} className="text-teal-600" />}
                       </button>
                     );

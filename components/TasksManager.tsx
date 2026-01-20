@@ -249,7 +249,7 @@ const TasksManager = () => {
 
   const getProfileName = (profileId: string) => {
     const profile = profiles.find(p => p.id === profileId);
-    return profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown';
+    return profile ? profile.name : 'Unknown';
   };
 
   const toggleCollaborator = (profileId: string) => {
@@ -408,8 +408,8 @@ const TasksManager = () => {
             <div className="h-px bg-gray-100 my-2"></div>
             {profiles.map(p => (
               <button key={p.id} onClick={() => setOwnerFilter(p.id)} className={`w-full text-left p-3 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 border border-transparent ${ownerFilter === p.id ? 'bg-teal-50 text-hit-dark border-teal-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <UserAvatar name={`${p.first_name} ${p.last_name}`} size="sm" />
-                <span className="truncate">{p.first_name} {p.last_name}</span>
+                <UserAvatar name={p.name} size="sm" />
+                <span className="truncate">{p.name}</span>
               </button>
             ))}
           </div>
@@ -592,7 +592,7 @@ const TasksManager = () => {
                       <option value="">Select owner...</option>
                       {profiles.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.first_name} {p.last_name}
+                          {p.name}
                         </option>
                       ))}
                     </select>
@@ -608,9 +608,9 @@ const TasksManager = () => {
                     className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-hit-blue"
                   >
                     <option value="">No supervisor</option>
-                    {profiles.filter(p => p.system_role === 'admin' || p.system_role === 'supervisor').map(p => (
+                    {profiles.filter(p => p.role === 'admin' || p.role === 'supervisor').map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.first_name} {p.last_name}
+                        {p.name}
                       </option>
                     ))}
                   </select>
@@ -716,8 +716,8 @@ const TasksManager = () => {
                               : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
                           }`}
                         >
-                          <UserAvatar name={`${p.first_name} ${p.last_name}`} size="xs" />
-                          {p.first_name} {p.last_name}
+                          <UserAvatar name={p.name} size="xs" />
+                          {p.name}
                           {isSelected && <CheckCircle2 size={14} className="text-teal-600" />}
                         </button>
                       );
