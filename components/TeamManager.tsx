@@ -8,10 +8,8 @@ import {
   Loader2,
   Plus,
   Trash2,
-  Edit2,
   X,
   Check,
-  UserPlus,
   Phone
 } from 'lucide-react';
 import { UserService } from '../services/UserService';
@@ -82,7 +80,7 @@ const TeamManager = () => {
   // Check if current user can manage (admin or supervisor)
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'supervisor';
 
-  const handleEditClick = (profile: Profile) => {
+  const handleRowClick = (profile: Profile) => {
     setFormMode('edit');
     setSelectedProfile(profile);
     setFormData({
@@ -95,7 +93,7 @@ const TeamManager = () => {
     setIsModalOpen(true);
   };
 
-  const handleAddCollaboratorClick = () => {
+  const handleAddClick = () => {
     setFormMode('create');
     setSelectedProfile(null);
     setFormData({
@@ -108,7 +106,8 @@ const TeamManager = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (profileId: string) => {
+  const handleDelete = async (e: React.MouseEvent, profileId: string) => {
+    e.stopPropagation(); // Prevent row click
     const profileToDelete = profiles.find(p => p.id === profileId);
     if (!profileToDelete) {
       alert("System Error: Could not locate profile record.");
@@ -120,7 +119,7 @@ const TeamManager = () => {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete collaborator "${profileToDelete.name}"? This action cannot be undone.`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${profileToDelete.name}"? This action cannot be undone.`)) return;
 
     try {
       await UserService.deleteCollaborator(profileId);
@@ -188,7 +187,7 @@ const TeamManager = () => {
     return (
       <div className="flex h-full items-center justify-center text-hit-blue">
         <Loader2 className="animate-spin mr-2" />
-        <span>Loading Team Directory...</span>
+        <span>Loading Directory...</span>
       </div>
     );
   }
@@ -201,9 +200,9 @@ const TeamManager = () => {
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Users className="text-hit-blue" /> Team Directory
+              <Users className="text-hit-blue" /> Directory
             </h2>
-            <p className="text-sm text-gray-500 mt-1">Manage users and collaborators.</p>
+            <p className="text-sm text-gray-500 mt-1">Manage contributors and collaborators.</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -211,7 +210,7 @@ const TeamManager = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Search team members..."
+                placeholder="Search contributors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hit-blue"
@@ -219,10 +218,11 @@ const TeamManager = () => {
             </div>
             {canManage && (
               <button
-                onClick={handleAddCollaboratorClick}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors shadow-sm"
+                onClick={handleAddClick}
+                className="w-10 h-10 flex items-center justify-center bg-hit-blue text-white rounded-xl hover:bg-hit-dark transition-colors shadow-lg shadow-hit-blue/20"
+                title="Add Contributor"
               >
-                <UserPlus size={16} /> Add Collaborator
+                <Plus size={20} />
               </button>
             )}
           </div>
@@ -237,7 +237,11 @@ const TeamManager = () => {
             </h3>
             <div className="space-y-2">
               {users.map(profile => (
-                <div key={profile.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors">
+                <div
+                  key={profile.id}
+                  onClick={() => handleRowClick(profile)}
+                  className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors cursor-pointer"
+                >
                   <div className="flex items-center gap-4">
                     <UserAvatar name={profile.name} size="md" />
                     <div>
@@ -245,6 +249,14 @@ const TeamManager = () => {
                       <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                         <Mail size={10} /> {profile.email || 'No email'}
                       </p>
+                      {profile.description && (
+                        <p className="text-xs text-gray-500 mt-1">{profile.description}</p>
+                      )}
+                      {profile.other_contact && (
+                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                          <Phone size={10} /> {profile.other_contact}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -256,17 +268,8 @@ const TeamManager = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                       User
                     </span>
-                    {canManage && profile.id !== currentUser?.id && (
-                      <button
-                        onClick={() => handleEditClick(profile)}
-                        className="p-2 text-gray-400 hover:text-hit-blue hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                    )}
                     {profile.id === currentUser?.id && (
-                      <span className="text-[10px] font-black text-gray-300 uppercase italic tracking-widest px-4">You</span>
+                      <span className="text-[10px] font-black text-gray-300 uppercase italic tracking-widest px-2">You</span>
                     )}
                   </div>
                 </div>
@@ -277,14 +280,18 @@ const TeamManager = () => {
             </div>
           </div>
 
-          {/* Collaborators Section */}
+          {/* External Collaborators Section */}
           <div className="p-6">
             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Users size={12} /> Non-User Collaborators ({collaborators.length})
+              <Users size={12} /> External Collaborators ({collaborators.length})
             </h3>
             <div className="space-y-2">
               {collaborators.map(profile => (
-                <div key={profile.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors border border-gray-100">
+                <div
+                  key={profile.id}
+                  onClick={() => handleRowClick(profile)}
+                  className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors border border-gray-100 cursor-pointer"
+                >
                   <div className="flex items-center gap-4">
                     <UserAvatar name={profile.name} size="md" />
                     <div>
@@ -294,6 +301,11 @@ const TeamManager = () => {
                       </p>
                       {profile.description && (
                         <p className="text-xs text-gray-500 mt-1">{profile.description}</p>
+                      )}
+                      {profile.other_contact && (
+                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                          <Phone size={10} /> {profile.other_contact}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -306,32 +318,23 @@ const TeamManager = () => {
                       External
                     </span>
                     {canManage && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEditClick(profile)}
-                          className="p-2 text-gray-400 hover:text-hit-blue hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(profile.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+                      <button
+                        onClick={(e) => handleDelete(e, profile.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     )}
                   </div>
                 </div>
               ))}
               {collaborators.length === 0 && (
                 <div className="text-center py-8 text-gray-400">
-                  <UserPlus size={32} className="mx-auto mb-2 opacity-30" />
+                  <Users size={32} className="mx-auto mb-2 opacity-30" />
                   <p className="text-sm font-medium">No external collaborators yet.</p>
                   {canManage && (
-                    <p className="text-xs mt-1">Click "Add Collaborator" to add someone who doesn't need login access.</p>
+                    <p className="text-xs mt-1">Click + to add someone who doesn't need login access.</p>
                   )}
                 </div>
               )}
@@ -343,7 +346,7 @@ const TeamManager = () => {
       {/* Sidebar Stats */}
       <div className="w-80 shrink-0 space-y-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="font-black text-gray-800 mb-6 uppercase tracking-tight">Team Structure</h3>
+          <h3 className="font-black text-gray-800 mb-6 uppercase tracking-tight">Contributors</h3>
 
           <div className="space-y-3">
             {/* Admin */}
@@ -392,7 +395,7 @@ const TeamManager = () => {
                   <Users size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">External Collaborators</p>
+                  <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest">External</p>
                   <p className="text-xl font-black text-gray-900">{contributorNonUserCount}</p>
                 </div>
               </div>
@@ -400,9 +403,9 @@ const TeamManager = () => {
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">About Collaborators</h4>
+            <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-widest">About Contributors</h4>
             <p className="text-xs text-gray-500 leading-relaxed font-medium">
-              External collaborators can be assigned to tasks and meetings but cannot log in. They are useful for tracking stakeholders, advisors, or partners.
+              External collaborators can be assigned to tasks and meetings but cannot log in. Click any row to view or edit details.
             </p>
           </div>
         </div>
@@ -414,7 +417,7 @@ const TeamManager = () => {
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-black text-gray-800 tracking-tight">
-                {formMode === 'create' ? 'Add Collaborator' : 'Edit Profile'}
+                {formMode === 'create' ? 'Add Contributor' : 'Edit Contributor'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
