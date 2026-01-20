@@ -16,8 +16,11 @@ import { OrgTask, Task, Section, User } from '../types';
 import OrgTaskCard from './OrgTaskCard';
 import TaskCard from './TaskCard';
 import UserAvatar from './UserAvatar';
+import { useAuth } from '../contexts/AuthContext';
+import { canCreateTasks, canEditTasks } from '../lib/permissions';
 
 const TasksView = () => {
+  const { currentUser } = useAuth();
   const [orgTasks, setOrgTasks] = useState<OrgTask[]>([]);
   const [reportTasks, setReportTasks] = useState<Task[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -183,12 +186,14 @@ const TasksView = () => {
       <div className="flex-1 flex flex-col gap-6 overflow-hidden">
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
-          <button
-            className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
-            title="Create New Task"
-          >
-            <Plus size={20} />
-          </button>
+          {canCreateTasks(currentUser) && (
+            <button
+              className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
+              title="Create New Task"
+            >
+              <Plus size={20} />
+            </button>
+          )}
 
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -228,7 +233,7 @@ const TasksView = () => {
                       key={task.id}
                       task={task}
                       linkedTaskCount={linkedTaskCounts[task.id] || 0}
-                      onClick={() => console.log('Edit org task:', task.id)}
+                      onClick={canEditTasks(currentUser) ? () => console.log('Edit org task:', task.id) : undefined}
                     />
                   ))
                 ) : (
@@ -271,7 +276,7 @@ const TasksView = () => {
                             <TaskCard
                               key={task.id}
                               task={task}
-                              onClick={() => console.log('Edit task:', task.id)}
+                              onClick={canEditTasks(currentUser) ? () => console.log('Edit task:', task.id) : undefined}
                             />
                           ))}
                         </div>

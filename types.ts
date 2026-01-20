@@ -17,6 +17,11 @@ export interface Profile {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
+  // Granular permissions (for login users only)
+  can_create_tasks?: boolean;
+  can_edit_tasks?: boolean;
+  can_create_meetings?: boolean;
+  can_edit_meetings?: boolean;
 }
 
 // Helper type for display

@@ -60,7 +60,12 @@ const TeamManager = () => {
     description: '',
     other_contact: '',
     role: 'contributor' as SystemRole,
-    is_user: false
+    is_user: false,
+    // Permission fields (only for login users)
+    can_create_tasks: false,
+    can_edit_tasks: false,
+    can_create_meetings: false,
+    can_edit_meetings: false
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -92,7 +97,11 @@ const TeamManager = () => {
       description: profile.description || '',
       other_contact: profile.other_contact || '',
       role: profile.role,
-      is_user: profile.is_user
+      is_user: profile.is_user,
+      can_create_tasks: profile.can_create_tasks ?? false,
+      can_edit_tasks: profile.can_edit_tasks ?? false,
+      can_create_meetings: profile.can_create_meetings ?? false,
+      can_edit_meetings: profile.can_edit_meetings ?? false
     });
     setIsModalOpen(true);
   };
@@ -106,7 +115,11 @@ const TeamManager = () => {
       description: '',
       other_contact: '',
       role: 'contributor',
-      is_user: false
+      is_user: false,
+      can_create_tasks: false,
+      can_edit_tasks: false,
+      can_create_meetings: false,
+      can_edit_meetings: false
     });
     setIsModalOpen(true);
   };
@@ -153,14 +166,24 @@ const TeamManager = () => {
         }
       } else if (formMode === 'edit' && selectedProfile) {
         // Update existing profile
-        const updated = await UserService.updateProfile(selectedProfile.id, {
+        const updateData: any = {
           name: formData.name,
           email: formData.email,
           description: formData.description || null,
           other_contact: formData.other_contact || null,
           role: formData.role,
           is_user: formData.is_user
-        });
+        };
+
+        // Include permission fields only for login users
+        if (formData.is_user) {
+          updateData.can_create_tasks = formData.can_create_tasks;
+          updateData.can_edit_tasks = formData.can_edit_tasks;
+          updateData.can_create_meetings = formData.can_create_meetings;
+          updateData.can_edit_meetings = formData.can_edit_meetings;
+        }
+
+        const updated = await UserService.updateProfile(selectedProfile.id, updateData);
         if (updated) {
           setProfiles(prev => prev.map(p => p.id === updated.id ? updated : p));
         }
@@ -516,6 +539,69 @@ const TeamManager = () => {
                   </button>
                 </div>
               </div>
+
+              {/* Permissions Section - only show when editing login users and current user is admin */}
+              {formMode === 'edit' && formData.is_user && canManage && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                    Permissions
+                  </label>
+
+                  {/* Tasks permissions */}
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-gray-600 mb-2">Tasks</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.can_create_tasks}
+                          onChange={e => setFormData({...formData, can_create_tasks: e.target.checked})}
+                          className="w-4 h-4 text-hit-blue rounded border-gray-300 focus:ring-hit-blue"
+                        />
+                        <span className="text-sm text-gray-700">Can create tasks</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.can_edit_tasks}
+                          onChange={e => setFormData({...formData, can_edit_tasks: e.target.checked})}
+                          className="w-4 h-4 text-hit-blue rounded border-gray-300 focus:ring-hit-blue"
+                        />
+                        <span className="text-sm text-gray-700">Can edit tasks</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Meetings permissions */}
+                  <div>
+                    <p className="text-xs font-bold text-gray-600 mb-2">Meetings</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.can_create_meetings}
+                          onChange={e => setFormData({...formData, can_create_meetings: e.target.checked})}
+                          className="w-4 h-4 text-hit-blue rounded border-gray-300 focus:ring-hit-blue"
+                        />
+                        <span className="text-sm text-gray-700">Can create meetings</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.can_edit_meetings}
+                          onChange={e => setFormData({...formData, can_edit_meetings: e.target.checked})}
+                          className="w-4 h-4 text-hit-blue rounded border-gray-300 focus:ring-hit-blue"
+                        />
+                        <span className="text-sm text-gray-700">Can edit meetings</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-gray-400 mt-3">
+                    Admins always have full access regardless of these settings.
+                  </p>
+                </div>
+              )}
 
               {formMode === 'edit' && selectedProfile?.id === currentUser?.id && (
                 <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">

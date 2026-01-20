@@ -21,6 +21,7 @@ import { Meeting, Task, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import MeetingCard from './MeetingCard';
 import UserAvatar from './UserAvatar';
+import { canCreateMeetings, canEditMeetings } from '../lib/permissions';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -262,13 +263,15 @@ const MeetingsView = () => {
       <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
-          <button
-            onClick={openCreateModal}
-            className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
-            title="Create New Meeting"
-          >
-            <Plus size={20} />
-          </button>
+          {canCreateMeetings(currentUser) && (
+            <button
+              onClick={openCreateModal}
+              className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
+              title="Create New Meeting"
+            >
+              <Plus size={20} />
+            </button>
+          )}
 
           <div className="flex-1" />
 
@@ -290,7 +293,7 @@ const MeetingsView = () => {
               <MeetingCard
                 key={meeting.id}
                 meeting={meeting}
-                onClick={() => openEditModal(meeting)}
+                onClick={canEditMeetings(currentUser) ? () => openEditModal(meeting) : undefined}
               />
             ))
           ) : (

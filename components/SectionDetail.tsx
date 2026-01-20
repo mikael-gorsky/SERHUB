@@ -6,6 +6,7 @@ import TaskCard from './TaskCard';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useSections } from '../contexts/SectionsContext';
+import { canCreateTasks, canEditTasks } from '../lib/permissions';
 
 interface TaskFormData {
   id?: string;
@@ -60,7 +61,8 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
     }
   };
 
-  const canAddTask = currentProfile?.role === 'admin' || currentProfile?.role === 'supervisor';
+  const canAdd = canCreateTasks(currentProfile);
+  const canEdit = canEditTasks(currentProfile);
 
   const getStatusLabel = (progress: number, blocked: boolean) => {
     if (blocked) return { label: 'Blocked', color: 'text-red-600 bg-red-50 border-red-100', bar: 'bg-red-500' };
@@ -238,7 +240,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0 ml-6">
-            {canAddTask && (
+            {canAdd && (
               <button
                 onClick={openCreateModal}
                 className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors shadow-sm"
@@ -262,7 +264,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
           {tasks.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
               <p className="text-gray-500 mb-4">No tasks yet for this section</p>
-              {canAddTask && (
+              {canAdd && (
                 <button
                   onClick={openCreateModal}
                   className="inline-flex items-center gap-2 px-4 py-2 text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors"
@@ -278,7 +280,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                 <TaskCard
                   key={task.id}
                   task={task}
-                  onClick={() => openEditModal(task)}
+                  onClick={canEdit ? () => openEditModal(task) : undefined}
                 />
               ))}
             </div>

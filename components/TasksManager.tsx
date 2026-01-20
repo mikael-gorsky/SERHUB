@@ -20,6 +20,7 @@ import { Task, Profile, Section } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from './UserAvatar';
 import { supabase, isConfigured } from '../lib/supabase';
+import { canCreateTasks, canEditTasks } from '../lib/permissions';
 
 interface TaskFormData {
   id?: string;
@@ -281,12 +282,13 @@ const TasksManager = () => {
     const stepStyles = getStepStyles(task.section_id);
     const section = sections.find(s => s.id === task.section_id);
     const descriptionLine = getFirstLine(task.description);
+    const canEdit = canEditTasks(currentUser);
 
     return (
       <div
         key={task.id}
-        onClick={() => openEditModal(task)}
-        className={`p-5 rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer ${stepStyles} ${isDone ? 'opacity-70' : ''}`}
+        onClick={() => canEdit && openEditModal(task)}
+        className={`p-5 rounded-2xl border shadow-sm transition-all group ${stepStyles} ${isDone ? 'opacity-70' : ''} ${canEdit ? 'hover:shadow-xl hover:-translate-y-1 cursor-pointer' : 'cursor-default'}`}
       >
         {/* Top Row: Section badge, Title, Due date, Owner */}
         <div className="flex items-center gap-5">
@@ -425,13 +427,15 @@ const TasksManager = () => {
       <div className="flex-1 flex flex-col gap-6 overflow-hidden">
         {/* Search Bar */}
         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 flex items-center gap-6">
-          <button
-            onClick={openCreateModal}
-            className="w-12 h-12 shrink-0 flex items-center justify-center bg-hit-blue text-white rounded-2xl shadow-lg shadow-hit-blue/20 hover:bg-hit-dark transition-all active:scale-95"
-            title="Create New Task"
-          >
-            <Plus size={24} />
-          </button>
+          {canCreateTasks(currentUser) && (
+            <button
+              onClick={openCreateModal}
+              className="w-12 h-12 shrink-0 flex items-center justify-center bg-hit-blue text-white rounded-2xl shadow-lg shadow-hit-blue/20 hover:bg-hit-dark transition-all active:scale-95"
+              title="Create New Task"
+            >
+              <Plus size={24} />
+            </button>
+          )}
 
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
