@@ -89,6 +89,12 @@ const TeamManager = () => {
   const canManage = currentUser?.role === 'admin';
 
   const handleRowClick = (profile: Profile) => {
+    // Only admins can edit other users
+    // Non-admins can only view/edit their own profile
+    if (!canManage && profile.id !== currentUser?.id) {
+      return; // Don't open modal for non-admins clicking on other users
+    }
+
     setFormMode('edit');
     setSelectedProfile(profile);
     setFormData({
@@ -267,11 +273,12 @@ const TeamManager = () => {
             <div className="space-y-2">
               {users.map(profile => {
                 const isMe = profile.id === currentUser?.id;
+                const canClickRow = canManage || isMe;
                 return (
                   <div
                     key={profile.id}
                     onClick={() => handleRowClick(profile)}
-                    className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors cursor-pointer"
+                    className={`flex items-center justify-between p-4 rounded-xl group transition-colors ${canClickRow ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
                   >
                     <div className="flex items-center gap-4">
                       <UserAvatar name={profile.name} role={profile.role} isUser={profile.is_user} size="md" isCurrentUser={isMe} />
@@ -319,7 +326,7 @@ const TeamManager = () => {
                 <div
                   key={profile.id}
                   onClick={() => handleRowClick(profile)}
-                  className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors border border-gray-100 cursor-pointer"
+                  className={`flex items-center justify-between p-4 rounded-xl group transition-colors border border-gray-100 ${canManage ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
                 >
                   <div className="flex items-center gap-4">
                     <UserAvatar name={profile.name} role={profile.role} isUser={profile.is_user} size="md" />
