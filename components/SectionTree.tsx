@@ -57,8 +57,17 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
     const isExpanded = expandedIds.has(section.id);
     const isSelected = selectedSectionId === section.id;
     const hasChildren = section.children && section.children.length > 0;
-    const isLevel1 = depth === 0;
-    const isLevel2 = depth === 1;
+    const isLevel1 = depth === 0;  // Top-level: 0, 1, 2, 3, 4, 5
+    const isLevel2 = depth === 1;  // First-level: 1.1, 2.1, etc.
+    const isLevel3 = depth === 2;  // Second-level: 3.1.1, etc.
+
+    // Get text styling based on level
+    const getTextStyle = () => {
+      if (isSelected) return 'font-bold text-white';
+      if (isLevel1) return 'font-bold text-green-800 text-base uppercase tracking-wide';
+      if (isLevel2) return 'font-bold text-teal-600 text-[15px]';
+      return 'font-medium text-gray-600 text-sm';
+    };
 
     return (
       <div key={section.id}>
@@ -67,8 +76,8 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
             isSelected
               ? 'bg-teal-600 text-white px-3'
               : isLevel2
-                ? 'text-teal-700 hover:bg-teal-50 px-3 bg-gray-100/50'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'hover:bg-teal-50 px-3 bg-gray-100/50'
+                : 'hover:bg-gray-100'
           }`}
           style={{ marginLeft: `${depth * 20}px` }}
           onClick={() => {
@@ -78,13 +87,8 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
         >
           {getIcon(section, isSelected)}
 
-          <span className={`text-sm flex-1 ${
-            isSelected ? 'font-semibold text-white' :
-            isLevel1 ? 'font-semibold text-gray-800' :
-            isLevel2 ? 'font-semibold text-teal-700' :
-            'font-medium text-gray-600'
-          }`}>
-            {section.number} {section.title}
+          <span className={`flex-1 ${getTextStyle()}`}>
+            {section.number} {isLevel1 ? section.title.toUpperCase() : section.title}
           </span>
 
           {isSelected && (
