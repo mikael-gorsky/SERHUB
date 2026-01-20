@@ -1,5 +1,17 @@
 import React from 'react';
-import { User } from 'lucide-react';
+
+// Custom user silhouette icon (filled style)
+const UserIcon = ({ size }: { size: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <circle cx="12" cy="7" r="5" />
+    <path d="M12 14c-5 0-9 2.5-9 6v1c0 .5.5 1 1 1h16c.5 0 1-.5 1-1v-1c0-3.5-4-6-9-6z" />
+  </svg>
+);
 
 const COLORS = [
   'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-yellow-500',
@@ -51,7 +63,7 @@ const UserAvatar = ({ name = 'User', size = 'md', className = '', isCurrentUser 
 
   return (
     <div className={`${sizeClasses} ${bgColor} rounded-full flex items-center justify-center text-white shrink-0 ${ringClass} ${className}`}>
-      <User size={iconSize} />
+      <UserIcon size={iconSize} />
     </div>
   );
 };
