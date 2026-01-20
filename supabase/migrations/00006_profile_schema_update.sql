@@ -91,13 +91,18 @@ ALTER TABLE serhub_profiles DROP COLUMN IF EXISTS is_active;
 CREATE INDEX IF NOT EXISTS idx_serhub_profiles_is_user ON serhub_profiles(is_user) WHERE is_user = true;
 
 -- ============================================
--- Step 12: Update RLS helper function for role check
+-- Step 12: Rename system_role column to role
+-- ============================================
+ALTER TABLE serhub_profiles RENAME COLUMN system_role TO role;
+
+-- ============================================
+-- Step 13: Update RLS helper function for role check
 -- ============================================
 CREATE OR REPLACE FUNCTION serhub_is_admin()
 RETURNS boolean AS $$
   SELECT EXISTS (
     SELECT 1 FROM serhub_profiles
-    WHERE id = auth.uid() AND system_role = 'admin'
+    WHERE id = auth.uid() AND role = 'admin'
   );
 $$ LANGUAGE sql SECURITY DEFINER;
 
@@ -105,6 +110,6 @@ CREATE OR REPLACE FUNCTION serhub_is_supervisor_or_admin()
 RETURNS boolean AS $$
   SELECT EXISTS (
     SELECT 1 FROM serhub_profiles
-    WHERE id = auth.uid() AND system_role IN ('admin', 'supervisor')
+    WHERE id = auth.uid() AND role IN ('admin', 'supervisor')
   );
 $$ LANGUAGE sql SECURITY DEFINER;
