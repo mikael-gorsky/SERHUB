@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, MoreHorizontal, X, Save, Loader2, AlertTriangle, CheckCircle2, Users } from 'lucide-react';
 import { Section, Task, Profile } from '../types';
-import { getTasksBySection, getProfiles, updateTask, supabase, isConfigured } from '../lib/supabase';
+import { getTasksBySection, getProfiles, updateTask, createTask, supabase, isConfigured } from '../lib/supabase';
 import TaskCard from './TaskCard';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +36,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<TaskFormData | null>(null);
 
@@ -100,12 +101,36 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
       due_date: task.due_date,
       collaborator_ids: collaboratorIds
     });
+    setIsCreating(false);
+    setShowModal(true);
+  };
+
+  const openCreateModal = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const dueDate = nextMonth.toISOString().split('T')[0];
+
+    setFormData({
+      title: '',
+      description: '',
+      section_id: section.id,
+      owner_id: currentProfile?.id || '',
+      supervisor_id: '',
+      status: 0,
+      blocked: false,
+      blocked_reason: '',
+      start_date: today,
+      due_date: dueDate,
+      collaborator_ids: []
+    });
+    setIsCreating(true);
     setShowModal(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData || !formData.id) return;
+    if (!formData) return;
 
     setIsSaving(true);
     try {
@@ -122,20 +147,32 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
         due_date: formData.due_date
       };
 
-      await updateTask(formData.id, taskData);
+      let taskId: string;
+
+      if (isCreating) {
+        const created = await createTask(taskData);
+        if (!created) throw new Error('Failed to create task');
+        taskId = created.id;
+      } else {
+        if (!formData.id) throw new Error('No task ID for update');
+        taskId = formData.id;
+        await updateTask(taskId, taskData);
+      }
 
       // Update collaborators
       if (isConfigured && supabase) {
-        // Remove existing collaborators
-        await supabase
-          .from('serhub_task_collaborators')
-          .delete()
-          .eq('task_id', formData.id);
+        // Remove existing collaborators (for edit mode)
+        if (!isCreating) {
+          await supabase
+            .from('serhub_task_collaborators')
+            .delete()
+            .eq('task_id', taskId);
+        }
 
         // Add new collaborators
         if (formData.collaborator_ids.length > 0) {
           const collaboratorInserts = formData.collaborator_ids.map(profileId => ({
-            task_id: formData.id,
+            task_id: taskId,
             profile_id: profileId
           }));
           await supabase
@@ -203,7 +240,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
           <div className="flex items-center gap-2 flex-shrink-0 ml-6">
             {canAddTask && (
               <button
-                onClick={onAddTask}
+                onClick={openCreateModal}
                 className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors shadow-sm"
               >
                 <Plus size={18} strokeWidth={2.5} />
@@ -227,7 +264,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
               <p className="text-gray-500 mb-4">No tasks yet for this section</p>
               {canAddTask && (
                 <button
-                  onClick={onAddTask}
+                  onClick={openCreateModal}
                   className="inline-flex items-center gap-2 px-4 py-2 text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors"
                 >
                   <Plus size={16} />
@@ -261,9 +298,11 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                 </button>
                 <div className="h-10 w-px bg-gray-100"></div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">Edit Task</h2>
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                    {isCreating ? 'New Task' : 'Edit Task'}
+                  </h2>
                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">
-                    ID: {formData.id?.slice(0, 8)}...
+                    {isCreating ? `Section: ${section.number}` : `ID: ${formData.id?.slice(0, 8)}...`}
                   </p>
                 </div>
               </div>
@@ -281,7 +320,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                   className="py-3 px-8 bg-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-700 transition-all flex items-center gap-2 shadow-xl shadow-teal-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                  Save Changes
+                  {isCreating ? 'Create Task' : 'Save Changes'}
                 </button>
               </div>
             </div>

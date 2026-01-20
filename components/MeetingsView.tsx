@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Search,
   Loader2,
   Plus,
   Calendar,
@@ -52,7 +51,6 @@ const MeetingsView = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [searchTerm, setSearchTerm] = useState('');
   const [showPast, setShowPast] = useState(false);
 
   // Calendar
@@ -88,14 +86,14 @@ const MeetingsView = () => {
 
   const filteredMeetings = useMemo(() => {
     const now = new Date();
-    return meetings.filter(meeting => {
-      const matchesSearch = (meeting.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (meeting.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const isPast = new Date(meeting.end_time) < now;
-      const matchesTime = showPast || !isPast;
-      return matchesSearch && matchesTime;
-    });
-  }, [meetings, searchTerm, showPast]);
+    return meetings
+      .filter(meeting => {
+        const isPast = new Date(meeting.end_time) < now;
+        const matchesTime = showPast || !isPast;
+        return matchesTime;
+      })
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  }, [meetings, showPast]);
 
   // Calendar helpers
   const year = currentDate.getFullYear();
@@ -261,7 +259,7 @@ const MeetingsView = () => {
   return (
     <div className="flex h-full gap-6 p-6">
       {/* Left Side - Meetings List */}
-      <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+      <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
           <button
@@ -272,16 +270,7 @@ const MeetingsView = () => {
             <Plus size={20} />
           </button>
 
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search meetings..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 transition-all"
-            />
-          </div>
+          <div className="flex-1" />
 
           <label className="flex items-center gap-2 cursor-pointer shrink-0">
             <input
@@ -309,9 +298,7 @@ const MeetingsView = () => {
               <Calendar size={48} className="text-gray-200 mb-4" />
               <h3 className="text-lg font-semibold text-gray-600">No Meetings</h3>
               <p className="text-sm max-w-xs mt-2">
-                {searchTerm
-                  ? 'No meetings match your search.'
-                  : 'Create your first meeting to get started.'}
+                Create your first meeting to get started.
               </p>
             </div>
           )}
@@ -319,7 +306,7 @@ const MeetingsView = () => {
       </div>
 
       {/* Right Side - Calendar */}
-      <div className="w-96 shrink-0 flex flex-col gap-6">
+      <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
         {/* Mini Calendar */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           {/* Calendar Header */}
