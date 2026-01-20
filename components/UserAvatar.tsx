@@ -1,15 +1,17 @@
 import React from 'react';
 
-// Custom user silhouette icon (filled style)
+// Custom user silhouette icon (filled style) - matches user.png
 const UserIcon = ({ size }: { size: number }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="0 0 512 512"
     fill="currentColor"
   >
-    <circle cx="12" cy="7" r="5" />
-    <path d="M12 14c-5 0-9 2.5-9 6v1c0 .5.5 1 1 1h16c.5 0 1-.5 1-1v-1c0-3.5-4-6-9-6z" />
+    {/* Head - large circle */}
+    <circle cx="256" cy="120" r="100" />
+    {/* Body - rounded shoulders with neck indent */}
+    <path d="M256 250c-90 0-170 40-200 100c-15 30-20 60-20 90c0 30 25 50 55 50h330c30 0 55-20 55-50c0-30-5-60-20-90c-30-60-110-100-200-100z" />
   </svg>
 );
 
