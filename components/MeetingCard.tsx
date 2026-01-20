@@ -28,7 +28,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
   const getCreatorInfo = () => {
     if (meeting.creator) {
       const creator = meeting.creator as Profile;
-      return { name: creator.name, role: creator.role };
+      return { name: creator.name, role: creator.role, is_user: creator.is_user };
     }
     return null;
   };
@@ -79,6 +79,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
             <UserAvatar
               name={creatorInfo?.name || 'User'}
               role={creatorInfo?.role}
+              isUser={creatorInfo?.is_user}
               size="md"
             />
           </div>

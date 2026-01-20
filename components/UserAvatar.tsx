@@ -17,28 +17,29 @@ const UserIcon = ({ size }: { size: number }) => (
 );
 
 // Role-based colors
-const getRoleColor = (role?: SystemRole): string => {
+const getRoleColor = (role?: SystemRole, isUser?: boolean): string => {
   switch (role) {
     case 'admin':
-      return 'text-blue-500';      // bright blue
+      return 'text-blue-500';       // bright blue
     case 'supervisor':
-      return 'text-orange-500';    // orange
+      return 'text-orange-500';     // orange
     case 'contributor':
     default:
-      return 'text-gray-600';      // dark grey
+      return isUser ? 'text-green-500' : 'text-gray-400';  // bright green for login users, grey for non-login
   }
 };
 
 interface UserAvatarProps {
   name?: string;
   role?: SystemRole;
+  isUser?: boolean;  // needed for contributor color differentiation
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   isCurrentUser?: boolean;
 }
 
-const UserAvatar = ({ name = 'User', role, size = 'md', className = '', isCurrentUser = false }: UserAvatarProps) => {
-  const iconColor = getRoleColor(role);
+const UserAvatar = ({ name = 'User', role, isUser, size = 'md', className = '', isCurrentUser = false }: UserAvatarProps) => {
+  const iconColor = getRoleColor(role, isUser);
 
   // Icon sizes (2x larger)
   let iconSize = 48;
@@ -55,8 +56,8 @@ const UserAvatar = ({ name = 'User', role, size = 'md', className = '', isCurren
     iconSize = 80;
   }
 
-  // Current user gets a red ring around the icon
-  const ringClass = isCurrentUser ? 'ring-2 ring-red-500 ring-offset-1 rounded-full p-0.5' : '';
+  // Current user gets a red ring around the icon (thicker ring, wider offset)
+  const ringClass = isCurrentUser ? 'ring-[3px] ring-red-500 ring-offset-[3px] rounded-full p-0.5' : '';
 
   return (
     <div className={`${iconColor} shrink-0 ${ringClass} ${className}`}>

@@ -306,7 +306,7 @@ const TasksManager = () => {
               <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
             </div>
             <div className="w-40 flex items-center gap-2">
-              <UserAvatar name={ownerName} role={owner?.role} size="sm" />
+              <UserAvatar name={ownerName} role={owner?.role} isUser={owner?.is_user} size="sm" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{ownerName}</p>
                 <p className="text-[8px] font-black text-hit-blue uppercase tracking-wider opacity-60">Owner</p>
@@ -413,7 +413,7 @@ const TasksManager = () => {
             <div className="h-px bg-gray-100 my-2"></div>
             {profiles.map(p => (
               <button key={p.id} onClick={() => setOwnerFilter(p.id)} className={`w-full text-left p-3 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 border border-transparent ${ownerFilter === p.id ? 'bg-teal-50 text-hit-dark border-teal-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
-                <UserAvatar name={p.name} role={p.role} size="sm" />
+                <UserAvatar name={p.name} role={p.role} isUser={p.is_user} size="sm" />
                 <span className="truncate">{p.name}</span>
               </button>
             ))}
@@ -721,7 +721,7 @@ const TasksManager = () => {
                               : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
                           }`}
                         >
-                          <UserAvatar name={p.name} role={p.role} size="xs" />
+                          <UserAvatar name={p.name} role={p.role} isUser={p.is_user} size="xs" />
                           {p.name}
                           {isSelected && <CheckCircle2 size={14} className="text-teal-600" />}
                         </button>

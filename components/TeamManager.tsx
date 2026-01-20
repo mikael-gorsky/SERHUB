@@ -251,7 +251,7 @@ const TeamManager = () => {
                     className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-4">
-                      <UserAvatar name={profile.name} role={profile.role} size="md" isCurrentUser={isMe} />
+                      <UserAvatar name={profile.name} role={profile.role} isUser={profile.is_user} size="md" isCurrentUser={isMe} />
                       <div>
                         <p className="font-bold text-gray-800">{profile.name}</p>
                         <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
@@ -299,7 +299,7 @@ const TeamManager = () => {
                   className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors border border-gray-100 cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
-                    <UserAvatar name={profile.name} role={profile.role} size="md" />
+                    <UserAvatar name={profile.name} role={profile.role} isUser={profile.is_user} size="md" />
                     <div>
                       <p className="font-bold text-gray-800">{profile.name}</p>
                       <p className="text-xs text-gray-400 font-medium flex items-center gap-1">

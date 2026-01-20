@@ -152,7 +152,7 @@ const TasksView = () => {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <UserAvatar name={u.name} role={u.role} size="sm" />
+                <UserAvatar name={u.name} role={u.role} isUser={u.is_user} size="sm" />
                 <span className="truncate">{u.name}</span>
               </button>
             ))}

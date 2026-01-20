@@ -510,7 +510,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                               : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
                           }`}
                         >
-                          <UserAvatar name={p.name} role={p.role} size="xs" />
+                          <UserAvatar name={p.name} role={p.role} isUser={p.is_user} size="xs" />
                           {p.name}
                           {isSelected && <CheckCircle2 size={14} className="text-teal-600" />}
                         </button>

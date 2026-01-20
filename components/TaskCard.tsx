@@ -43,7 +43,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const getOwnerInfo = () => {
     if (task.owner) {
       const owner = task.owner as Profile;
-      return { name: owner.name, role: owner.role };
+      return { name: owner.name, role: owner.role, is_user: owner.is_user };
     }
     return null;
   };
@@ -96,6 +96,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             <UserAvatar
               name={ownerInfo?.name || 'User'}
               role={ownerInfo?.role}
+              isUser={ownerInfo?.is_user}
               size="md"
             />
             {task.collaborators && task.collaborators.length > 0 && (
