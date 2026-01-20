@@ -10,9 +10,9 @@ export const MeetingService = {
       .from('serhub_meetings')
       .select(`
         *,
-        creator:serhub_profiles!created_by(id, name, email, role, is_user, avatar_url),
+        creator:serhub_profiles!created_by(id, name, email, role, is_user),
         participants:serhub_meeting_participants(
-          profile:serhub_profiles(id, name, email, role, is_user, avatar_url)
+          profile:serhub_profiles(id, name, email, role, is_user)
         )
       `)
       .order('start_time', { ascending: false });
@@ -37,7 +37,7 @@ export const MeetingService = {
       .from('serhub_meetings')
       .select(`
         *,
-        creator:serhub_profiles!created_by(id, name, email, role, is_user, avatar_url)
+        creator:serhub_profiles!created_by(id, name, email, role, is_user)
       `)
       .gte('start_time', now.toISOString())
       .lte('start_time', future.toISOString())
