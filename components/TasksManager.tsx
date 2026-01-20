@@ -45,7 +45,7 @@ const TasksManager = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [progressFilter, setProgressFilter] = useState<'All' | 'NotStarted' | 'InProgress'>('All');
+  const [progressFilter, setProgressFilter] = useState<'All' | 'NotStarted' | 'InProgress'>('InProgress');
   const [sectionFilter, setSectionFilter] = useState('All');
   const [ownerFilter, setOwnerFilter] = useState('All');
 
@@ -80,10 +80,11 @@ const TasksManager = () => {
   const getStatusLabel = (progress: number, blocked: boolean) => {
     if (blocked) return { label: 'Blocked', color: 'text-red-600 bg-red-50 border-red-100', bar: 'bg-red-500' };
     if (progress === 100) return { label: 'Done', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
-    if (progress < 25) return { label: 'Starting', color: 'text-slate-500 bg-slate-50 border-slate-100', bar: 'bg-slate-400' };
-    if (progress < 50) return { label: 'In Progress', color: 'text-hit-blue bg-blue-50 border-blue-100', bar: 'bg-hit-blue' };
-    if (progress < 75) return { label: 'Advancing', color: 'text-amber-600 bg-amber-50 border-amber-100', bar: 'bg-amber-500' };
-    return { label: 'Finishing', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
+    // Progress bar colors: yellow (0-25) -> yellow-green (25-50) -> bright green (50-75) -> red-green (75-100)
+    if (progress < 25) return { label: 'Starting', color: 'text-yellow-600 bg-yellow-50 border-yellow-100', bar: 'bg-yellow-400' };
+    if (progress < 50) return { label: 'In Progress', color: 'text-lime-600 bg-lime-50 border-lime-100', bar: 'bg-lime-500' };
+    if (progress < 75) return { label: 'Advancing', color: 'text-green-600 bg-green-50 border-green-100', bar: 'bg-green-500' };
+    return { label: 'Finishing', color: 'text-orange-600 bg-orange-50 border-orange-100', bar: 'bg-orange-500' };
   };
 
   const getStepStyles = (sectionId: string) => {
@@ -328,7 +329,7 @@ const TasksManager = () => {
         {/* Progress Bar Row */}
         <div className="flex items-center gap-4 mt-3 ml-[76px]">
           <div className="flex-1 max-w-xs">
-            <div className="h-2 w-full bg-white/50 rounded-full overflow-hidden border border-black/5">
+            <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden border border-black/5">
               <div
                 className={`h-full transition-all duration-500 ${status.bar}`}
                 style={{ width: `${task.status}%` }}
