@@ -14,11 +14,11 @@ const UserIcon = ({ size }: { size: number }) => (
 );
 
 const COLORS = [
-  'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-yellow-500',
-  'bg-lime-500', 'bg-green-500', 'bg-emerald-500', 'bg-teal-500',
-  'bg-cyan-500', 'bg-sky-500', 'bg-blue-500', 'bg-indigo-500',
-  'bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500', 'bg-pink-500',
-  'bg-rose-500', 'bg-slate-500'
+  'text-red-500', 'text-orange-500', 'text-amber-500', 'text-yellow-600',
+  'text-lime-500', 'text-green-500', 'text-emerald-500', 'text-teal-500',
+  'text-cyan-500', 'text-sky-500', 'text-blue-500', 'text-indigo-500',
+  'text-violet-500', 'text-purple-500', 'text-fuchsia-500', 'text-pink-500',
+  'text-rose-500', 'text-slate-500'
 ];
 
 interface UserAvatarProps {
@@ -35,34 +35,27 @@ const UserAvatar = ({ name = 'User', size = 'md', className = '', isCurrentUser 
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   const colorIndex = Math.abs(hash) % COLORS.length;
-  const bgColor = COLORS[colorIndex];
+  const iconColor = COLORS[colorIndex];
 
-  let sizeClasses = 'w-10 h-10';
-  let iconSize = 20;
-  let ringSize = 'ring-2 ring-offset-1';
+  let iconSize = 24;
 
   if (size === 'xs') {
-    sizeClasses = 'w-6 h-6';
-    iconSize = 12;
-    ringSize = 'ring-1 ring-offset-1';
-  } else if (size === 'sm') {
-    sizeClasses = 'w-8 h-8';
     iconSize = 16;
-    ringSize = 'ring-2 ring-offset-1';
-  } else if (size === 'lg') {
-    sizeClasses = 'w-12 h-12';
+  } else if (size === 'sm') {
+    iconSize = 20;
+  } else if (size === 'md') {
     iconSize = 24;
-    ringSize = 'ring-2 ring-offset-2';
-  } else if (size === 'xl') {
-    sizeClasses = 'w-16 h-16';
+  } else if (size === 'lg') {
     iconSize = 32;
-    ringSize = 'ring-[3px] ring-offset-2';
+  } else if (size === 'xl') {
+    iconSize = 40;
   }
 
-  const ringClass = isCurrentUser ? `${ringSize} ring-red-500` : '';
+  // Current user gets a red ring around the icon
+  const ringClass = isCurrentUser ? 'ring-2 ring-red-500 ring-offset-1 rounded-full p-0.5' : '';
 
   return (
-    <div className={`${sizeClasses} ${bgColor} rounded-full flex items-center justify-center text-white shrink-0 ${ringClass} ${className}`}>
+    <div className={`${iconColor} shrink-0 ${ringClass} ${className}`}>
       <UserIcon size={iconSize} />
     </div>
   );
