@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserService } from '../services/UserService';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, AlertCircle, Mail, Lock, ArrowRight, ChevronDown, UserCheck, ShieldCheck } from 'lucide-react';
+import { Loader2, AlertCircle, Lock, ChevronDown, UserCheck, ShieldCheck } from 'lucide-react';
 import { User } from '../types';
+import AppLogo from './AppLogo';
 
 const Login = () => {
-  const { currentUser, signInEmail, enterGuestMode } = useAuth();
+  const { currentUser, signInEmail } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -69,25 +70,17 @@ const Login = () => {
     }
   };
 
-  const handleMgShortcut = () => {
-    const mgEmail = 'mikaelg@hit.ac.il';
-    const mgPass = '123456';
-    setEmail(mgEmail);
-    setPassword(mgPass);
-    handleEmailLogin(undefined, mgEmail, mgPass);
-  };
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-gray-100 to-gray-200">
       <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
         
         {/* HIT Brand Header */}
-        <div className="bg-hit-dark p-12 text-center relative overflow-hidden shrink-0">
+        <div className="bg-gradient-to-r from-hit-blue to-hit-dark p-12 text-center relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mb-16"></div>
-          
-          <div className="w-24 h-24 bg-hit-accent rounded-[2rem] flex items-center justify-center font-black text-5xl text-hit-dark mx-auto mb-6 shadow-2xl rotate-3 border-4 border-white/20">
-            S
+
+          <div className="mx-auto mb-6">
+            <AppLogo size={96} />
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter uppercase">SER HUB</h1>
           <p className="text-blue-100 text-[10px] font-black uppercase tracking-[0.3em] mt-3 opacity-80 leading-relaxed">
@@ -169,34 +162,7 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="relative my-12">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
-            </div>
-            <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.5em]">
-              <span className="px-6 bg-white text-gray-300">Fast Lane</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleMgShortcut}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-hit-accent text-hit-dark font-black py-5 px-8 rounded-[1.5rem] transition-all shadow-lg hover:bg-hit-accent/5 active:scale-95 disabled:opacity-70 uppercase text-[10px] tracking-widest mb-4"
-          >
-            <ArrowRight size={18} className="text-hit-accent" />
-            <span>Institutional Administrator Login</span>
-          </button>
-
-          <button
-            onClick={() => { enterGuestMode(); navigate('/'); }}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-gray-100 text-gray-600 font-black py-5 px-8 rounded-[1.5rem] transition-all hover:bg-gray-200 active:scale-95 disabled:opacity-70 uppercase text-[10px] tracking-widest"
-          >
-            <UserCheck size={18} />
-            <span>Enter as Guest (Demo Mode)</span>
-          </button>
-
-          <div className="mt-16 pt-8 border-t border-gray-50 text-center">
+          <div className="mt-12 pt-8 border-t border-gray-50 text-center">
              <img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/99/Holon_Institute_of_Technology_Logo.svg/1200px-Holon_Institute_of_Technology_Logo.svg.png" alt="HIT Logo" className="h-10 mx-auto opacity-30 grayscale hover:grayscale-0 transition-all cursor-pointer" />
              <p className="text-[9px] text-gray-300 font-black uppercase tracking-widest mt-8 leading-relaxed">
                Proprietary Educational Management Gateway <br/>
