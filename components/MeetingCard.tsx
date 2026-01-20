@@ -28,10 +28,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
   const getCreatorName = () => {
     if (meeting.creator) {
       const creator = meeting.creator as Profile;
-      if (creator.title) {
-        return `${creator.title} ${creator.first_name} ${creator.last_name}`;
-      }
-      return `${creator.first_name} ${creator.last_name}`;
+      return creator.name;
     }
     return null;
   };

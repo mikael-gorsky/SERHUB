@@ -11,8 +11,8 @@ export const OrgTaskService = {
       .from('serhub_org_tasks')
       .select(`
         *,
-        owner:serhub_profiles!owner_id(id, first_name, last_name, title, avatar_url),
-        supervisor:serhub_profiles!supervisor_id(id, first_name, last_name, title, avatar_url)
+        owner:serhub_profiles!owner_id(id, name, email, role, is_user, avatar_url),
+        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user, avatar_url)
       `)
       .order('due_date');
     console.log('OrgTaskService.getAll result:', { count: data?.length, error });
@@ -28,8 +28,8 @@ export const OrgTaskService = {
       .from('serhub_org_tasks')
       .select(`
         *,
-        owner:serhub_profiles!owner_id(id, first_name, last_name, title, avatar_url),
-        supervisor:serhub_profiles!supervisor_id(id, first_name, last_name, title, avatar_url)
+        owner:serhub_profiles!owner_id(id, name, email, role, is_user, avatar_url),
+        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user, avatar_url)
       `)
       .or(`owner_id.eq.${userId},supervisor_id.eq.${userId}`)
       .order('due_date');
@@ -227,7 +227,7 @@ export const OrgTaskService = {
       .from('serhub_org_tasks')
       .select(`
         *,
-        owner:serhub_profiles!owner_id(id, first_name, last_name, title)
+        owner:serhub_profiles!owner_id(id, name, email, role, is_user)
       `)
       .in('id', orgTaskIds);
     if (error) throw error;
