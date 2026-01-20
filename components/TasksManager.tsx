@@ -255,56 +255,86 @@ const TasksManager = () => {
     }
   };
 
+  // Get first line of description (up to first period or newline)
+  const getFirstLine = (text: string | null | undefined) => {
+    if (!text) return '';
+    const firstLine = text.split(/[.\n]/)[0];
+    return firstLine.length > 80 ? firstLine.slice(0, 80) + '...' : firstLine;
+  };
+
   const renderTaskCard = (task: Task) => {
     const ownerName = getProfileName(task.owner_id);
     const status = getStatusLabel(task.status, task.blocked);
     const isDone = task.status === 100;
     const stepStyles = getStepStyles(task.section_id);
     const section = sections.find(s => s.id === task.section_id);
+    const descriptionLine = getFirstLine(task.description);
 
     return (
       <div
         key={task.id}
         onClick={() => openEditModal(task)}
-        className={`p-5 rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer flex items-center gap-5 ${stepStyles} ${isDone ? 'opacity-70' : ''}`}
+        className={`p-5 rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer ${stepStyles} ${isDone ? 'opacity-70' : ''}`}
       >
-        <div className="w-14 shrink-0 text-center">
-          <span className="bg-hit-dark text-white text-[9px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
-            {section?.number || '??'}
-          </span>
+        {/* Top Row: Section badge, Title, Due date, Owner */}
+        <div className="flex items-center gap-5">
+          <div className="w-14 shrink-0 text-center">
+            <span className="bg-hit-dark text-white text-[9px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
+              {section?.number || '??'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className={`text-base font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+              {task.title}
+            </h4>
+          </div>
+          <div className="flex items-center gap-6 shrink-0">
+            <div className="w-16 text-center">
+              <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Due</span>
+              <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
+            </div>
+            <div className="w-40 flex items-center gap-2">
+              <UserAvatar name={ownerName} size="sm" className="border-2 border-white/50 shadow-sm" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{ownerName}</p>
+                <p className="text-[8px] font-black text-hit-blue uppercase tracking-wider opacity-60">Owner</p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-gray-200 group-hover:text-hit-blue transition-colors" />
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className={`text-base font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-            {task.title}
-          </h4>
-          <p className={`text-sm font-medium truncate ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>
-            {task.description}
+
+        {/* Description Line */}
+        {descriptionLine && (
+          <p className={`text-sm font-medium mt-2 ml-[76px] ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>
+            {descriptionLine}
           </p>
-          {task.blocked && (
-            <div className="flex items-center gap-2 text-xs text-red-600 mt-1">
-              <AlertTriangle size={12} />
-              <span className="font-bold">Blocked: {task.blocked_reason}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-6 shrink-0">
-          <div className="w-16 text-center">
-            <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Due</span>
-            <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
+        )}
+
+        {/* Blocked Warning */}
+        {task.blocked && (
+          <div className="flex items-center gap-2 text-xs text-red-600 mt-2 ml-[76px]">
+            <AlertTriangle size={12} />
+            <span className="font-bold">Blocked: {task.blocked_reason}</span>
           </div>
-          <div className="w-40 flex items-center gap-2">
-            <UserAvatar name={ownerName} size="sm" className="border-2 border-white/50 shadow-sm" />
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{ownerName}</p>
-              <p className="text-[8px] font-black text-hit-blue uppercase tracking-wider opacity-60">Owner</p>
+        )}
+
+        {/* Progress Bar Row */}
+        <div className="flex items-center gap-4 mt-3 ml-[76px]">
+          <div className="flex-1 max-w-xs">
+            <div className="h-2 w-full bg-white/50 rounded-full overflow-hidden border border-black/5">
+              <div
+                className={`h-full transition-all duration-500 ${status.bar}`}
+                style={{ width: `${task.status}%` }}
+              />
             </div>
           </div>
-          <div className="w-24">
-            <div className={`text-center py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border bg-white shadow-sm ${status.color}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-gray-600">{task.status}%</span>
+            <div className={`text-center px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border bg-white shadow-sm ${status.color}`}>
               {status.label}
             </div>
           </div>
-          <ChevronRight size={18} className="text-gray-200 group-hover:text-hit-blue transition-colors" />
         </div>
       </div>
     );

@@ -85,9 +85,25 @@ const AppHeader = () => {
 // --- Main View with Tabs ---
 const MainView = () => {
   const { theme } = useTheme();
+  const { sections } = useSections();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [calendarViewMode, setCalendarViewMode] = useState<'list' | 'calendar'>('list');
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
+
+  // Auto-select Organizational Tasks section on first load
+  React.useEffect(() => {
+    if (!hasAutoSelected && sections.length > 0 && !selectedSection) {
+      // Find the Org section
+      const orgSection = sections.find(s =>
+        s.number === 'Org' || s.title.toLowerCase().includes('organizational')
+      );
+      if (orgSection) {
+        setSelectedSection(orgSection);
+        setHasAutoSelected(true);
+      }
+    }
+  }, [sections, hasAutoSelected, selectedSection]);
 
   return (
     <div className={`flex flex-col h-screen ${theme.bgPrimary}`}>
