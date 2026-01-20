@@ -10,7 +10,9 @@ import {
   Trash2,
   X,
   Check,
-  Phone
+  Phone,
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import { UserService } from '../services/UserService';
 import { useAuth } from '../contexts/AuthContext';
@@ -57,7 +59,8 @@ const TeamManager = () => {
     email: '',
     description: '',
     other_contact: '',
-    role: 'contributor' as SystemRole
+    role: 'contributor' as SystemRole,
+    is_user: false
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -88,7 +91,8 @@ const TeamManager = () => {
       email: profile.email || '',
       description: profile.description || '',
       other_contact: profile.other_contact || '',
-      role: profile.role
+      role: profile.role,
+      is_user: profile.is_user
     });
     setIsModalOpen(true);
   };
@@ -101,7 +105,8 @@ const TeamManager = () => {
       email: '',
       description: '',
       other_contact: '',
-      role: 'contributor'
+      role: 'contributor',
+      is_user: false
     });
     setIsModalOpen(true);
   };
@@ -135,7 +140,7 @@ const TeamManager = () => {
     setIsSaving(true);
     try {
       if (formMode === 'create') {
-        // Create a new non-user collaborator
+        // Create a new collaborator
         const newProfile = await UserService.createCollaborator({
           name: formData.name,
           email: formData.email,
@@ -153,7 +158,8 @@ const TeamManager = () => {
           email: formData.email,
           description: formData.description || null,
           other_contact: formData.other_contact || null,
-          role: formData.role
+          role: formData.role,
+          is_user: formData.is_user
         });
         if (updated) {
           setProfiles(prev => prev.map(p => p.id === updated.id ? updated : p));
@@ -216,15 +222,13 @@ const TeamManager = () => {
                 className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-hit-blue"
               />
             </div>
-            {canManage && (
-              <button
-                onClick={handleAddClick}
-                className="w-10 h-10 flex items-center justify-center bg-hit-blue text-white rounded-xl hover:bg-hit-dark transition-colors shadow-lg shadow-hit-blue/20"
-                title="Add Contributor"
-              >
-                <Plus size={20} />
-              </button>
-            )}
+            <button
+              onClick={handleAddClick}
+              className="w-10 h-10 flex items-center justify-center bg-hit-blue text-white rounded-xl hover:bg-hit-dark transition-colors shadow-lg shadow-hit-blue/20"
+              title="Add Contributor"
+            >
+              <Plus size={20} />
+            </button>
           </div>
         </div>
 
@@ -236,44 +240,44 @@ const TeamManager = () => {
               <UserIcon size={12} /> Login Users ({users.length})
             </h3>
             <div className="space-y-2">
-              {users.map(profile => (
-                <div
-                  key={profile.id}
-                  onClick={() => handleRowClick(profile)}
-                  className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-4">
-                    <UserAvatar name={profile.name} size="md" />
-                    <div>
-                      <p className="font-bold text-gray-800">{profile.name}</p>
-                      <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                        <Mail size={10} /> {profile.email || 'No email'}
-                      </p>
-                      {profile.description && (
-                        <p className="text-xs text-gray-500 mt-1">{profile.description}</p>
-                      )}
-                      {profile.other_contact && (
-                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                          <Phone size={10} /> {profile.other_contact}
+              {users.map(profile => {
+                const isMe = profile.id === currentUser?.id;
+                return (
+                  <div
+                    key={profile.id}
+                    onClick={() => handleRowClick(profile)}
+                    className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 group transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <UserAvatar name={profile.name} size="md" isCurrentUser={isMe} />
+                      <div>
+                        <p className="font-bold text-gray-800">{profile.name}</p>
+                        <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                          <Mail size={10} /> {profile.email || 'No email'}
                         </p>
-                      )}
+                        {profile.description && (
+                          <p className="text-xs text-gray-500 mt-1">{profile.description}</p>
+                        )}
+                        {profile.other_contact && (
+                          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                            <Phone size={10} /> {profile.other_contact}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${getRoleBadgeStyle(profile.role, profile.is_user)}`}>
+                        {(profile.role === 'admin' || profile.role === 'supervisor') && <Shield size={10} />}
+                        {getRoleLabel(profile.role)}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-green-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        User
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${getRoleBadgeStyle(profile.role, profile.is_user)}`}>
-                      {(profile.role === 'admin' || profile.role === 'supervisor') && <Shield size={10} />}
-                      {getRoleLabel(profile.role)}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-green-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      User
-                    </span>
-                    {profile.id === currentUser?.id && (
-                      <span className="text-[10px] font-black text-gray-300 uppercase italic tracking-widest px-2">You</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {users.length === 0 && (
                 <p className="text-sm text-gray-400 text-center py-4">No users found.</p>
               )}
@@ -333,9 +337,7 @@ const TeamManager = () => {
                 <div className="text-center py-8 text-gray-400">
                   <Users size={32} className="mx-auto mb-2 opacity-30" />
                   <p className="text-sm font-medium">No external collaborators yet.</p>
-                  {canManage && (
-                    <p className="text-xs mt-1">Click + to add someone who doesn't need login access.</p>
-                  )}
+                  <p className="text-xs mt-1">Click + to add someone.</p>
                 </div>
               )}
             </div>
@@ -473,23 +475,50 @@ const TeamManager = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Role</label>
-                <select
-                  value={formData.role}
-                  onChange={e => setFormData({...formData, role: e.target.value as SystemRole})}
-                  className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-hit-blue transition-all cursor-pointer"
-                >
-                  <option value="contributor">Contributor</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="admin">Admin</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Role</label>
+                  <select
+                    value={formData.role}
+                    onChange={e => setFormData({...formData, role: e.target.value as SystemRole})}
+                    className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-hit-blue transition-all cursor-pointer"
+                  >
+                    <option value="contributor">Contributor</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Login Access</label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, is_user: !formData.is_user})}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      formData.is_user
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {formData.is_user ? (
+                      <>
+                        <UserCheck size={16} />
+                        Can Login
+                      </>
+                    ) : (
+                      <>
+                        <UserX size={16} />
+                        No Login
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
-              {formMode === 'edit' && selectedProfile?.is_user && (
-                <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                  <p className="text-xs text-blue-700 font-medium">
-                    This is a login user. You can change their role, but they will retain login access.
+              {formMode === 'edit' && selectedProfile?.id === currentUser?.id && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <p className="text-xs text-amber-700 font-medium">
+                    This is your account. Be careful when changing your own role or login access.
                   </p>
                 </div>
               )}
