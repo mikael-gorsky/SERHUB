@@ -24,16 +24,16 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
   // Check if meeting is in the past
   const isPast = new Date(meeting.end_time) < new Date();
 
-  // Get creator name
-  const getCreatorName = () => {
+  // Get creator info
+  const getCreatorInfo = () => {
     if (meeting.creator) {
       const creator = meeting.creator as Profile;
-      return creator.name;
+      return { name: creator.name, role: creator.role };
     }
     return null;
   };
 
-  const creatorName = getCreatorName();
+  const creatorInfo = getCreatorInfo();
 
   return (
     <div
@@ -71,15 +71,15 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onClick }) => {
 
           {/* Creator */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {creatorName && (
+            {creatorInfo && (
               <span className="text-sm text-gray-600 hidden sm:block">
-                {creatorName}
+                {creatorInfo.name}
               </span>
             )}
             <UserAvatar
-              name={creatorName || 'User'}
+              name={creatorInfo?.name || 'User'}
+              role={creatorInfo?.role}
               size="md"
-              className="border-2 border-white shadow"
             />
           </div>
         </div>

@@ -67,7 +67,7 @@ const AppHeader = () => {
               <div className="text-sm font-medium">{currentUser?.name}</div>
               <div className="text-xs text-white/60">{currentUser?.role}</div>
             </div>
-            <UserAvatar name={currentUser?.name} size="md" className="border-2 border-white/30" />
+            <UserAvatar name={currentUser?.name} role={currentUser?.role} size="md" />
             <button
               onClick={signOut}
               className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

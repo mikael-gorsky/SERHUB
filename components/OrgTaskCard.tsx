@@ -40,16 +40,16 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
     return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
   };
 
-  // Get owner name
-  const getOwnerName = () => {
+  // Get owner info
+  const getOwnerInfo = () => {
     if (task.owner) {
       const owner = task.owner as Profile;
-      return owner.name;
+      return { name: owner.name, role: owner.role };
     }
     return null;
   };
 
-  const ownerName = getOwnerName();
+  const ownerInfo = getOwnerInfo();
 
   return (
     <div
@@ -97,15 +97,15 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
 
           {/* Owner/Collaborators */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {ownerName && (
+            {ownerInfo && (
               <span className="text-sm text-gray-600 hidden sm:block">
-                {ownerName}
+                {ownerInfo.name}
               </span>
             )}
             <UserAvatar
-              name={ownerName || 'User'}
+              name={ownerInfo?.name || 'User'}
+              role={ownerInfo?.role}
               size="md"
-              className="border-2 border-white shadow"
             />
             {task.collaborators && task.collaborators.length > 0 && (
               <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full font-medium">

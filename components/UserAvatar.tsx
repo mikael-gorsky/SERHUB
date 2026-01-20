@@ -1,4 +1,5 @@
 import React from 'react';
+import { SystemRole } from '../types';
 
 // Custom user silhouette icon (filled style) - matches user.png
 const UserIcon = ({ size }: { size: number }) => (
@@ -15,42 +16,43 @@ const UserIcon = ({ size }: { size: number }) => (
   </svg>
 );
 
-const COLORS = [
-  'text-red-500', 'text-orange-500', 'text-amber-500', 'text-yellow-600',
-  'text-lime-500', 'text-green-500', 'text-emerald-500', 'text-teal-500',
-  'text-cyan-500', 'text-sky-500', 'text-blue-500', 'text-indigo-500',
-  'text-violet-500', 'text-purple-500', 'text-fuchsia-500', 'text-pink-500',
-  'text-rose-500', 'text-slate-500'
-];
+// Role-based colors
+const getRoleColor = (role?: SystemRole): string => {
+  switch (role) {
+    case 'admin':
+      return 'text-blue-500';      // bright blue
+    case 'supervisor':
+      return 'text-orange-500';    // orange
+    case 'contributor':
+    default:
+      return 'text-gray-600';      // dark grey
+  }
+};
 
 interface UserAvatarProps {
   name?: string;
+  role?: SystemRole;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   isCurrentUser?: boolean;
 }
 
-const UserAvatar = ({ name = 'User', size = 'md', className = '', isCurrentUser = false }: UserAvatarProps) => {
-  // Simple hash function to pick a color based on the name string
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colorIndex = Math.abs(hash) % COLORS.length;
-  const iconColor = COLORS[colorIndex];
+const UserAvatar = ({ name = 'User', role, size = 'md', className = '', isCurrentUser = false }: UserAvatarProps) => {
+  const iconColor = getRoleColor(role);
 
-  let iconSize = 24;
+  // Icon sizes (2x larger)
+  let iconSize = 48;
 
   if (size === 'xs') {
-    iconSize = 16;
-  } else if (size === 'sm') {
-    iconSize = 20;
-  } else if (size === 'md') {
-    iconSize = 24;
-  } else if (size === 'lg') {
     iconSize = 32;
-  } else if (size === 'xl') {
+  } else if (size === 'sm') {
     iconSize = 40;
+  } else if (size === 'md') {
+    iconSize = 48;
+  } else if (size === 'lg') {
+    iconSize = 64;
+  } else if (size === 'xl') {
+    iconSize = 80;
   }
 
   // Current user gets a red ring around the icon
