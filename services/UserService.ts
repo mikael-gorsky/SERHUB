@@ -148,9 +148,12 @@ export const UserService = {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
+    // Generate UUID for non-user profiles
+    const newId = crypto.randomUUID();
     const { data, error } = await supabase
       .from('serhub_profiles')
       .insert({
+        id: newId,
         name: collaborator.name,
         email: collaborator.email,
         description: collaborator.description || null,
