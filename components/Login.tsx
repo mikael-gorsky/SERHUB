@@ -75,7 +75,7 @@ const Login = () => {
       <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
         
         {/* HIT Brand Header */}
-        <div className="bg-gradient-to-r from-hit-blue to-hit-dark p-12 text-center relative overflow-hidden shrink-0">
+        <div className="bg-gradient-to-r from-teal-600 to-teal-800 p-12 text-center relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mb-16"></div>
 
@@ -111,14 +111,14 @@ const Login = () => {
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Institutional Identity</label>
               <div className="relative group">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-hit-blue transition-colors z-10">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors z-10">
                   <UserCheck size={20} />
                 </div>
                 <select
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loadingUsers}
-                  className="w-full pl-14 pr-12 py-5 bg-gray-50 border-none rounded-[1.5rem] text-sm font-black text-gray-800 focus:ring-2 focus:ring-hit-blue appearance-none transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full pl-14 pr-12 py-5 bg-gray-50 border-none rounded-[1.5rem] text-sm font-black text-gray-800 focus:ring-2 focus:ring-teal-500 appearance-none transition-all cursor-pointer disabled:opacity-50"
                   required
                 >
                   <option value="" disabled>Search Directory...</option>
@@ -131,7 +131,7 @@ const Login = () => {
                 <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
               </div>
               {loadingUsers && (
-                <p className="text-[9px] text-hit-blue mt-3 font-black uppercase flex items-center justify-center gap-2 tracking-widest">
+                <p className="text-[9px] text-teal-600 mt-3 font-black uppercase flex items-center justify-center gap-2 tracking-widest">
                   <Loader2 className="animate-spin" size={12} /> Syncing institutional records...
                 </p>
               )}
@@ -140,12 +140,12 @@ const Login = () => {
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Secure Access Key</label>
               <div className="relative group">
-                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-hit-blue transition-colors" size={20} />
-                <input 
-                  type="password" 
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={20} />
+                <input
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-14 pr-6 py-5 bg-gray-50 border-none rounded-[1.5rem] text-sm font-black text-gray-800 focus:ring-2 focus:ring-hit-blue transition-all"
+                  className="w-full pl-14 pr-6 py-5 bg-gray-50 border-none rounded-[1.5rem] text-sm font-black text-gray-800 focus:ring-2 focus:ring-teal-500 transition-all"
                   placeholder="••••••••"
                   required
                 />
@@ -155,7 +155,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-4 bg-hit-blue hover:bg-hit-dark text-white font-black py-5 px-8 rounded-[1.5rem] transition-all shadow-2xl shadow-hit-blue/30 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed uppercase text-xs tracking-[0.3em]"
+              className="w-full flex items-center justify-center gap-4 bg-teal-600 hover:bg-teal-700 text-white font-black py-5 px-8 rounded-[1.5rem] transition-all shadow-2xl shadow-teal-600/30 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed uppercase text-xs tracking-[0.3em]"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} strokeWidth={3} />}
               <span>{loading ? 'Verifying...' : 'Authenticate'}</span>
