@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Folder, FileText, Globe, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Folder, FileText, Globe, ChevronRight, Users } from 'lucide-react';
 import { Section } from '../types';
 import { useSections } from '../contexts/SectionsContext';
 
@@ -12,6 +12,24 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
   // Use pre-loaded sections from context
   const { sections, totalProgress, loading } = useSections();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Helper to check if a section is the Organizational Tasks section
+  const isOrgSection = (section: Section) =>
+    section.number === 'Org' || section.title.toLowerCase().includes('organizational');
+
+  // Sort sections: Org first, then by number
+  const sortedSections = useMemo(() => {
+    return [...sections].sort((a, b) => {
+      const aIsOrg = isOrgSection(a);
+      const bIsOrg = isOrgSection(b);
+      if (aIsOrg && !bIsOrg) return -1;
+      if (!aIsOrg && bIsOrg) return 1;
+      // For numeric sections, sort by number
+      const aNum = parseInt(a.number.replace(/[^0-9]/g, '')) || 0;
+      const bNum = parseInt(b.number.replace(/[^0-9]/g, '')) || 0;
+      return aNum - bNum;
+    });
+  }, [sections]);
 
   // Expand all sections when they load
   useEffect(() => {
@@ -42,6 +60,9 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
     const iconClass = isSelected ? 'text-white' : 'text-teal-600';
 
     // Special icons for specific sections
+    if (isOrgSection(section)) {
+      return <Users size={18} className={isSelected ? 'text-white' : 'text-purple-600'} />;
+    }
     if (section.title.toLowerCase().includes('internationalization')) {
       return <Globe size={18} className={iconClass} />;
     }
@@ -62,11 +83,28 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
     const isLevel3 = depth === 2;  // Second-level: 3.1.1, etc.
 
     // Get text styling based on level
+    // Top-level: largest (base), First-level: -1 (sm/14px), Second-level: -2 (xs/12px)
+    const isOrg = isOrgSection(section);
     const getTextStyle = () => {
-      if (isSelected) return 'font-bold text-white';
+      if (isSelected) return 'font-bold text-white text-base';
+      if (isOrg) return 'font-bold text-purple-700 text-base uppercase tracking-wide';
       if (isLevel1) return 'font-bold text-green-800 text-base uppercase tracking-wide';
-      if (isLevel2) return 'font-bold text-teal-600 text-[15px]';
-      return 'font-medium text-gray-600 text-sm';
+      if (isLevel2) return 'font-bold text-teal-600 text-sm';
+      return 'font-medium text-gray-600 text-xs';
+    };
+
+    // Get display title - rename "Org Organizational tasks" to "Organizational Tasks"
+    const getDisplayTitle = () => {
+      if (isOrg) {
+        return 'ORGANIZATIONAL TASKS';
+      }
+      return isLevel1 ? section.title.toUpperCase() : section.title;
+    };
+
+    // Get display number - hide number for Org section
+    const getDisplayNumber = () => {
+      if (isOrg) return '';
+      return section.number;
     };
 
     return (
@@ -88,7 +126,7 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
           {getIcon(section, isSelected)}
 
           <span className={`flex-1 ${getTextStyle()}`}>
-            {section.number} {isLevel1 ? section.title.toUpperCase() : section.title}
+            {getDisplayNumber()}{getDisplayNumber() ? ' ' : ''}{getDisplayTitle()}
           </span>
 
           {isSelected && (
@@ -126,7 +164,7 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
       {/* Section Tree */}
       <div className="flex-1 overflow-y-auto p-4 pt-2">
         <div className="space-y-1">
-          {sections.map(section => renderSection(section))}
+          {sortedSections.map(section => renderSection(section))}
         </div>
       </div>
 
