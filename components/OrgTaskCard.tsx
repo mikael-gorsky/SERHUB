@@ -17,23 +17,34 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
   // Determine deadline-based status for the card border and label
   const getDeadlineStatus = () => {
     if (task.blocked) {
-      return { label: 'Blocked', color: 'text-red-500', dotColor: 'bg-red-500', borderColor: 'border-l-red-400' };
+      return { label: 'Blocked', color: 'text-red-500', dotColor: 'bg-red-500', borderColor: 'border-l-red-400', show: true };
     }
     if (task.status === 100) {
-      return { label: 'Complete', color: 'text-green-600', dotColor: 'bg-green-500', borderColor: 'border-l-green-400' };
+      return { label: 'Done', color: 'text-green-600', dotColor: 'bg-green-500', borderColor: 'border-l-green-400', show: true };
     }
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const dueDate = new Date(task.due_date);
+    dueDate.setHours(0, 0, 0, 0);
     const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
+    // No label for tasks not yet started
+    if (task.status === 0) {
+      return { label: '', color: '', dotColor: 'bg-gray-300', borderColor: 'border-l-gray-300', show: false };
+    }
+
     if (dueDate < today) {
-      return { label: 'Overdue', color: 'text-red-600', dotColor: 'bg-red-600', borderColor: 'border-l-red-400' };
+      return { label: 'Overdue', color: 'text-red-600', dotColor: 'bg-red-600', borderColor: 'border-l-red-400', show: true };
     }
-    if (daysUntilDue <= 14) {
-      return { label: 'Approaching Deadline', color: 'text-orange-500', dotColor: 'bg-orange-400', borderColor: 'border-l-orange-300' };
+    if (daysUntilDue <= 7) {
+      return { label: 'Deadline very soon', color: 'text-pink-700', dotColor: 'bg-pink-600', borderColor: 'border-l-pink-500', show: true };
     }
-    return { label: 'On Track', color: 'text-green-600', dotColor: 'bg-green-500', borderColor: 'border-l-green-400' };
+    if (daysUntilDue > 14) {
+      return { label: 'In progress', color: 'text-blue-600', dotColor: 'bg-blue-500', borderColor: 'border-l-blue-400', show: true };
+    }
+    // 8-14 days away
+    return { label: 'Approaching deadline', color: 'text-orange-500', dotColor: 'bg-orange-400', borderColor: 'border-l-orange-300', show: true };
   };
 
   const deadlineStatus = getDeadlineStatus();
@@ -82,12 +93,14 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
               </div>
 
               {/* Deadline status badge */}
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${deadlineStatus.dotColor}`} />
-                <span className={`text-sm font-medium ${deadlineStatus.color}`}>
-                  {deadlineStatus.label}
-                </span>
-              </div>
+              {deadlineStatus.show && (
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${deadlineStatus.dotColor}`} />
+                  <span className={`text-sm font-medium ${deadlineStatus.color}`}>
+                    {deadlineStatus.label}
+                  </span>
+                </div>
+              )}
 
               {/* Progress stage badge */}
               <div className={`text-xs font-semibold px-2 py-0.5 rounded border ${progressStatus.color}`}>
