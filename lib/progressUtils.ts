@@ -31,7 +31,7 @@ export const getProgressStatus = (progress: number, blocked?: boolean): Progress
 
   if (progress >= 75) {
     return {
-      label: 'Complete',
+      label: 'Completing',
       color: 'text-green-700 bg-green-50 border-green-200',
       dotColor: 'bg-green-500',
       gradient: 'linear-gradient(90deg, #7CB342 0%, #4CAF50 100%)',
