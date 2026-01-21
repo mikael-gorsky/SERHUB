@@ -17,6 +17,7 @@ import { DocumentService } from '../services/DocumentService';
 import { UserService } from '../services/UserService';
 import { Section, Task, Document, User } from '../types';
 import UserAvatar from './UserAvatar';
+import { getProgressStatus, getProgressChartColor } from '../lib/progressUtils';
 
 const EditStep = () => {
   const { id } = useParams<{ id: string }>();
@@ -103,12 +104,15 @@ const EditStep = () => {
     setIsCreating(true);
   };
 
+  // Use centralized progress status utility
   const getStatusLabel = (progress: number) => {
-    if (progress === 100) return { label: 'Done', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500', hex: '#10b981' };
-    if (progress < 25) return { label: 'Launching', color: 'text-slate-500 bg-slate-50 border-slate-100', bar: 'bg-slate-400', hex: '#94a3b8' };
-    if (progress < 50) return { label: 'Progressing', color: 'text-hit-blue bg-blue-50 border-blue-100', bar: 'bg-hit-blue', hex: '#005695' };
-    if (progress < 75) return { label: 'Polishing', color: 'text-[#d97706] bg-amber-50 border-amber-100', bar: 'bg-hit-accent', hex: '#FDB913' };
-    return { label: 'Delivering', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500', hex: '#10b981' };
+    const status = getProgressStatus(progress, false);
+    return {
+      label: status.label,
+      color: status.color,
+      gradient: status.gradient,
+      hex: getProgressChartColor(progress)
+    };
   };
 
   const stepMinProgress = tasks.length > 0 ? Math.min(...tasks.map(t => t.progress)) : 0;
@@ -347,7 +351,7 @@ const EditStep = () => {
                         <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${getStatusLabel(editingTask.progress).color}`}>{getStatusLabel(editingTask.progress).label}</span>
                     </div>
                     <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden mb-6">
-                        <div className={`h-full transition-all duration-500 ${getStatusLabel(editingTask.progress).bar}`} style={{width: `${editingTask.progress}%`}}></div>
+                        <div className="h-full transition-all duration-500 rounded-full" style={{width: `${editingTask.progress}%`, background: getStatusLabel(editingTask.progress).gradient}}></div>
                     </div>
                     <input type="range" min="0" max="100" value={editingTask.progress} onChange={e => setEditingTask({...editingTask, progress: parseInt(e.target.value)})} className="w-full h-1 bg-gray-200 rounded-full appearance-none cursor-pointer accent-hit-blue" />
                  </div>

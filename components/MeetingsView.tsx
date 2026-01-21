@@ -23,6 +23,7 @@ import MeetingCard from './MeetingCard';
 import UserAvatar from './UserAvatar';
 import { canCreateMeetings, canEditMeetings, canEditTasks } from '../lib/permissions';
 import { supabase, isConfigured } from '../lib/supabase';
+import { getProgressDotColor, getProgressStatus } from '../lib/progressUtils';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -473,8 +474,8 @@ const MeetingsView = () => {
                       {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className={`w-1.5 h-1.5 rounded-full ${task.status >= 75 ? 'bg-green-500' : task.status >= 50 ? 'bg-yellow-500' : 'bg-gray-400'}`} />
-                      {task.status}%
+                      <span className={`w-1.5 h-1.5 rounded-full ${getProgressDotColor(task.status)}`} />
+                      {task.status}% · {getProgressStatus(task.status).label}
                     </div>
                   </div>
                 </div>

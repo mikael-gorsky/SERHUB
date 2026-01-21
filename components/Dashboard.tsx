@@ -16,6 +16,7 @@ import { SectionService } from '../services/SectionService';
 import { TaskService } from '../services/TaskService';
 import { EventService } from '../services/EventService';
 import { Section, Task, CalendarEvent } from '../types';
+import { getProgressChartColor } from '../lib/progressUtils';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -78,11 +79,9 @@ const Dashboard = () => {
     docs: (s.documentsUploaded / s.documentsExpected) * 100
   }));
 
+  // Use centralized progress chart colors
   const getStatusColor = (progress: number) => {
-    if (progress >= 75) return '#10b981'; // Delivering (Emerald)
-    if (progress >= 50) return '#FDB913'; // Polishing (HIT Accent)
-    if (progress >= 25) return '#005695'; // Progressing (HIT Blue)
-    return '#94a3b8'; // Launching (Slate)
+    return getProgressChartColor(progress);
   };
 
   return (

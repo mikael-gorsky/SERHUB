@@ -7,6 +7,7 @@ import UserAvatar from './UserAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useSections } from '../contexts/SectionsContext';
 import { canCreateTasks, canEditTasks } from '../lib/permissions';
+import { getProgressStatus } from '../lib/progressUtils';
 
 interface TaskFormData {
   id?: string;
@@ -64,13 +65,14 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
   const canAdd = canCreateTasks(currentProfile);
   const canEdit = canEditTasks(currentProfile);
 
+  // Use centralized progress status utility
   const getStatusLabel = (progress: number, blocked: boolean) => {
-    if (blocked) return { label: 'Blocked', color: 'text-red-600 bg-red-50 border-red-100', bar: 'bg-red-500' };
-    if (progress === 100) return { label: 'Done', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
-    if (progress < 25) return { label: 'Starting', color: 'text-slate-500 bg-slate-50 border-slate-100', bar: 'bg-slate-400' };
-    if (progress < 50) return { label: 'In Progress', color: 'text-blue-600 bg-blue-50 border-blue-100', bar: 'bg-blue-500' };
-    if (progress < 75) return { label: 'Advancing', color: 'text-amber-600 bg-amber-50 border-amber-100', bar: 'bg-amber-500' };
-    return { label: 'Finishing', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
+    const status = getProgressStatus(progress, blocked);
+    return {
+      label: status.label,
+      color: status.color,
+      gradient: status.gradient
+    };
   };
 
   const getProfileName = (profileId: string) => {
@@ -452,8 +454,11 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                   </div>
                   <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden mb-4">
                     <div
-                      className={`h-full transition-all duration-500 ${getStatusLabel(formData.status, formData.blocked).bar}`}
-                      style={{width: `${formData.status}%`}}
+                      className="h-full transition-all duration-500 rounded-full"
+                      style={{
+                        width: `${formData.status}%`,
+                        background: getStatusLabel(formData.status, formData.blocked).gradient
+                      }}
                     />
                   </div>
                   <input

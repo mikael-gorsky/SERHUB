@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from './UserAvatar';
 import { supabase, isConfigured } from '../lib/supabase';
 import { canCreateTasks, canEditTasks } from '../lib/permissions';
+import { getProgressStatus } from '../lib/progressUtils';
 
 interface TaskFormData {
   id?: string;
@@ -78,14 +79,14 @@ const TasksManager = () => {
     }
   };
 
+  // Use centralized progress status utility
   const getStatusLabel = (progress: number, blocked: boolean) => {
-    if (blocked) return { label: 'Blocked', color: 'text-red-600 bg-red-50 border-red-100', bar: 'bg-red-500' };
-    if (progress === 100) return { label: 'Done', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' };
-    // Progress bar colors: yellow (0-25) -> yellow-green (25-50) -> bright green (50-75) -> red-green (75-100)
-    if (progress < 25) return { label: 'Starting', color: 'text-yellow-600 bg-yellow-50 border-yellow-100', bar: 'bg-yellow-400' };
-    if (progress < 50) return { label: 'In Progress', color: 'text-lime-600 bg-lime-50 border-lime-100', bar: 'bg-lime-500' };
-    if (progress < 75) return { label: 'Advancing', color: 'text-green-600 bg-green-50 border-green-100', bar: 'bg-green-500' };
-    return { label: 'Finishing', color: 'text-orange-600 bg-orange-50 border-orange-100', bar: 'bg-orange-500' };
+    const status = getProgressStatus(progress, blocked);
+    return {
+      label: status.label,
+      color: status.color,
+      gradient: status.gradient
+    };
   };
 
   const getStepStyles = (sectionId: string) => {
@@ -338,8 +339,11 @@ const TasksManager = () => {
           <div className="flex-1 max-w-xs">
             <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden border border-black/5">
               <div
-                className={`h-full transition-all duration-500 ${status.bar}`}
-                style={{ width: `${task.status}%` }}
+                className="h-full transition-all duration-500 rounded-full"
+                style={{
+                  width: `${task.status}%`,
+                  background: status.gradient
+                }}
               />
             </div>
           </div>
@@ -665,8 +669,11 @@ const TasksManager = () => {
                   </div>
                   <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden mb-4">
                     <div
-                      className={`h-full transition-all duration-500 ${getStatusLabel(formData.status, formData.blocked).bar}`}
-                      style={{width: `${formData.status}%`}}
+                      className="h-full transition-all duration-500 rounded-full"
+                      style={{
+                        width: `${formData.status}%`,
+                        background: getStatusLabel(formData.status, formData.blocked).gradient
+                      }}
                     />
                   </div>
                   <input

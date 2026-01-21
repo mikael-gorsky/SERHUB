@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Task, Profile } from '../types';
 import UserAvatar from './UserAvatar';
+import { getProgressStatus } from '../lib/progressUtils';
 
 interface TaskCardProps {
   task: Task;
@@ -9,13 +10,16 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
-  // Determine task status label
-  const getStatusInfo = () => {
+  // Get progress-based status for the progress bar
+  const progressStatus = getProgressStatus(task.status, task.blocked);
+
+  // Determine deadline-based status for the card border and label
+  const getDeadlineStatus = () => {
     if (task.blocked) {
-      return { label: 'Blocked', color: 'text-red-500', dotColor: 'bg-red-500', borderColor: 'border-l-red-400', progressColor: 'bg-red-400' };
+      return { label: 'Blocked', color: 'text-red-500', dotColor: 'bg-red-500', borderColor: 'border-l-red-400' };
     }
     if (task.status === 100) {
-      return { label: 'Complete', color: 'text-blue-500', dotColor: 'bg-blue-500', borderColor: 'border-l-blue-400', progressColor: 'bg-blue-400' };
+      return { label: 'Complete', color: 'text-green-600', dotColor: 'bg-green-500', borderColor: 'border-l-green-400' };
     }
 
     const today = new Date();
@@ -23,15 +27,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (dueDate < today) {
-      return { label: 'Overdue', color: 'text-red-600', dotColor: 'bg-red-600', borderColor: 'border-l-red-400', progressColor: 'bg-red-400' };
+      return { label: 'Overdue', color: 'text-red-600', dotColor: 'bg-red-600', borderColor: 'border-l-red-400' };
     }
     if (daysUntilDue <= 14) {
-      return { label: 'Approaching Deadline', color: 'text-orange-500', dotColor: 'bg-orange-400', borderColor: 'border-l-orange-300', progressColor: 'bg-orange-300' };
+      return { label: 'Approaching Deadline', color: 'text-orange-500', dotColor: 'bg-orange-400', borderColor: 'border-l-orange-300' };
     }
-    return { label: 'On Track', color: 'text-green-600', dotColor: 'bg-green-500', borderColor: 'border-l-green-400', progressColor: 'bg-green-400' };
+    return { label: 'On Track', color: 'text-green-600', dotColor: 'bg-green-500', borderColor: 'border-l-green-400' };
   };
 
-  const statusInfo = getStatusInfo();
+  const deadlineStatus = getDeadlineStatus();
 
   // Format date
   const formatDate = (dateStr: string) => {
@@ -52,7 +56,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
 
   return (
     <div
-      className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${statusInfo.borderColor}`}
+      className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${deadlineStatus.borderColor}`}
       onClick={onClick}
     >
       <div className="p-5">
@@ -76,12 +80,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                 <span>{formatDate(task.due_date)}</span>
               </div>
 
-              {/* Status badge */}
+              {/* Deadline status badge */}
               <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${statusInfo.dotColor}`} />
-                <span className={`text-sm font-medium ${statusInfo.color}`}>
-                  {statusInfo.label}
+                <span className={`w-2 h-2 rounded-full ${deadlineStatus.dotColor}`} />
+                <span className={`text-sm font-medium ${deadlineStatus.color}`}>
+                  {deadlineStatus.label}
                 </span>
+              </div>
+
+              {/* Progress stage badge */}
+              <div className={`text-xs font-semibold px-2 py-0.5 rounded border ${progressStatus.color}`}>
+                {progressStatus.label}
               </div>
             </div>
           </div>
@@ -120,7 +129,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
         <div className="mt-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Completion
+              {progressStatus.label}
             </span>
             <span className="text-sm font-semibold text-gray-500">
               {task.status}%
@@ -128,8 +137,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${statusInfo.progressColor}`}
-              style={{ width: `${task.status}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${task.status}%`,
+                background: progressStatus.gradient
+              }}
             />
           </div>
         </div>
