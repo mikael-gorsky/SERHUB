@@ -21,7 +21,8 @@ import { Meeting, Task, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import MeetingCard from './MeetingCard';
 import UserAvatar from './UserAvatar';
-import { canCreateMeetings, canEditMeetings } from '../lib/permissions';
+import { canCreateMeetings, canEditMeetings, canEditTasks } from '../lib/permissions';
+import { supabase, isConfigured } from '../lib/supabase';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -44,6 +45,16 @@ interface MeetingFormData {
   participant_ids: string[];
 }
 
+interface TaskFormData {
+  id: string;
+  title: string;
+  description: string;
+  status: number;
+  blocked: boolean;
+  blocked_reason: string;
+  due_date: string;
+}
+
 const MeetingsView = () => {
   const { currentUser, currentProfile } = useAuth();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -57,11 +68,16 @@ const MeetingsView = () => {
   // Calendar
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Modal
+  // Meeting Modal
   const [showModal, setShowModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<MeetingFormData | null>(null);
+
+  // Task Modal
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskFormData, setTaskFormData] = useState<TaskFormData | null>(null);
+  const [isSavingTask, setIsSavingTask] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -248,6 +264,51 @@ const MeetingsView = () => {
     }
   };
 
+  const openEditTaskModal = (task: Task) => {
+    setTaskFormData({
+      id: task.id,
+      title: task.title,
+      description: task.description || '',
+      status: task.status,
+      blocked: task.blocked || false,
+      blocked_reason: task.blocked_reason || '',
+      due_date: task.due_date || ''
+    });
+    setShowTaskModal(true);
+  };
+
+  const handleSaveTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskFormData || !isConfigured) return;
+
+    setIsSavingTask(true);
+    try {
+      const { error } = await supabase
+        .from('serhub_tasks')
+        .update({
+          title: taskFormData.title,
+          description: taskFormData.description || null,
+          status: taskFormData.status,
+          blocked: taskFormData.blocked,
+          blocked_reason: taskFormData.blocked ? taskFormData.blocked_reason : null,
+          due_date: taskFormData.due_date || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskFormData.id);
+
+      if (error) throw error;
+
+      setShowTaskModal(false);
+      setTaskFormData(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to save task:', error);
+      alert("Failed to save task.");
+    } finally {
+      setIsSavingTask(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-teal-600">
@@ -400,7 +461,10 @@ const MeetingsView = () => {
               .map(task => (
                 <div
                   key={task.id}
-                  className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={canEditTasks(currentProfile) ? () => openEditTaskModal(task) : undefined}
+                  className={`p-3 bg-gray-50 rounded-xl transition-colors ${
+                    canEditTasks(currentProfile) ? 'hover:bg-gray-100 cursor-pointer' : ''
+                  }`}
                 >
                   <p className="text-sm font-medium text-gray-800 line-clamp-1">{task.title}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
@@ -595,6 +659,137 @@ const MeetingsView = () => {
                   {isCreating ? 'Create Meeting' : 'Save Changes'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Edit Modal */}
+      {showTaskModal && taskFormData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-lg max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="px-8 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <Flag size={20} className="text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Edit Task</h2>
+                  <p className="text-xs text-gray-500">Update task details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTaskModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-600 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveTask} className="flex-1 overflow-y-auto p-8 space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={taskFormData.title}
+                  onChange={e => setTaskFormData({...taskFormData, title: e.target.value})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={taskFormData.description}
+                  onChange={e => setTaskFormData({...taskFormData, description: e.target.value})}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              {/* Due Date & Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={taskFormData.due_date}
+                    onChange={e => setTaskFormData({...taskFormData, due_date: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Status (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={taskFormData.status}
+                    onChange={e => setTaskFormData({...taskFormData, status: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Blocked */}
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={taskFormData.blocked}
+                    onChange={e => setTaskFormData({...taskFormData, blocked: e.target.checked})}
+                    className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Task is blocked</span>
+                </label>
+              </div>
+
+              {taskFormData.blocked && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Blocked Reason
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={taskFormData.blocked_reason}
+                    onChange={e => setTaskFormData({...taskFormData, blocked_reason: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                    placeholder="Why is this task blocked?"
+                  />
+                </div>
+              )}
+            </form>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-5 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setShowTaskModal(false)}
+                className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveTask}
+                disabled={isSavingTask || !taskFormData.title}
+                className="px-6 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingTask ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
