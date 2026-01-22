@@ -7,9 +7,10 @@ interface OrgTaskCardProps {
   task: OrgTask;
   linkedTaskCount?: number;
   onClick?: () => void;
+  showFullNames?: boolean;
 }
 
-const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, onClick }) => {
+const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, onClick, showFullNames = false }) => {
   // Get progress-based status for the progress bar
   const progressStatus = getProgressStatus(task.status, task.blocked);
 
@@ -150,7 +151,7 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
                   }`}
                   title={contributor.name}
                 >
-                  {contributor.name.split(' ')[0]}
+                  {showFullNames ? contributor.name : contributor.name.split(' ')[0]}
                 </span>
               ))}
             </div>

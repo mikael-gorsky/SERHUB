@@ -6,9 +6,10 @@ import { getProgressStatus } from '../lib/progressUtils';
 interface TaskCardProps {
   task: Task;
   onClick?: () => void;
+  showFullNames?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = false }) => {
   // Get progress-based status for the progress bar
   const progressStatus = getProgressStatus(task.status, task.blocked);
 
@@ -141,7 +142,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
                   }`}
                   title={contributor.name}
                 >
-                  {contributor.name.split(' ')[0]}
+                  {showFullNames ? contributor.name : contributor.name.split(' ')[0]}
                 </span>
               ))}
             </div>
