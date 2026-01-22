@@ -308,12 +308,33 @@ const TasksManager = () => {
               <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Due</span>
               <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
             </div>
-            <div className="w-40 flex items-center gap-2">
-              <UserAvatar name={ownerName} role={owner?.role} isUser={owner?.is_user} size="sm" />
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate">{ownerName}</p>
-                <p className="text-[8px] font-black text-hit-blue uppercase tracking-wider opacity-60">Owner</p>
+            <div className="flex items-center gap-2 max-w-[50%] overflow-hidden">
+              {/* Owner */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <UserAvatar name={ownerName} role={owner?.role} isUser={owner?.is_user} size="sm" />
+                <span className="text-sm font-bold text-gray-900 whitespace-nowrap">{ownerName}</span>
               </div>
+              {/* Collaborators */}
+              {task.collaborators && task.collaborators.length > 0 && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  {task.collaborators.map((collab: any) => (
+                    <span
+                      key={collab.id}
+                      className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+                        collab.role === 'admin'
+                          ? 'bg-purple-100 text-purple-700'
+                          : collab.is_user
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                      title={collab.name}
+                    >
+                      {collab.name}
+                    </span>
+                  ))}
+                </>
+              )}
             </div>
             <ChevronRight size={18} className="text-gray-200 group-hover:text-hit-blue transition-colors" />
           </div>
