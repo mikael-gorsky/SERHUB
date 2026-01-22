@@ -7,25 +7,49 @@ export const OrgTaskService = {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
-    const { data, error } = await supabase
+    // Fetch org tasks
+    const { data: tasksData, error: tasksError } = await supabase
       .from('serhub_org_tasks')
       .select(`
         *,
         owner:serhub_profiles!owner_id(id, name, email, role, is_user),
-        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user),
-        collaborator_links:serhub_org_task_collaborators(user:serhub_profiles!user_id(id, name, email, role, is_user))
+        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user)
       `)
       .order('due_date');
-    console.log('OrgTaskService.getAll result:', { count: data?.length, error });
-    if (error) throw error;
-    // Debug: log first task's collaborator_links
-    if (data && data.length > 0) {
-      console.log('OrgTaskService.getAll - first task collaborator_links:', data[0].collaborator_links);
+    console.log('OrgTaskService.getAll result:', { count: tasksData?.length, error: tasksError });
+    if (tasksError) throw tasksError;
+
+    const tasks = tasksData || [];
+    if (tasks.length === 0) return [];
+
+    // Fetch all collaborators in one query
+    const taskIds = tasks.map(t => t.id);
+    const { data: collabData, error: collabError } = await supabase
+      .from('serhub_org_task_collaborators')
+      .select('org_task_id, user:serhub_profiles!user_id(id, name, email, role, is_user)')
+      .in('org_task_id', taskIds);
+
+    if (collabError) {
+      console.error('Error fetching org task collaborators:', collabError);
     }
-    // Flatten collaborators from {user: Profile}[] to Profile[]
-    return (data || []).map(task => ({
+
+    // Group collaborators by org_task_id
+    const collabsByTask: Record<string, any[]> = {};
+    (collabData || []).forEach(c => {
+      if (!collabsByTask[c.org_task_id]) {
+        collabsByTask[c.org_task_id] = [];
+      }
+      if (c.user) {
+        collabsByTask[c.org_task_id].push(c.user);
+      }
+    });
+
+    console.log('OrgTaskService.getAll - collaborators by task:', Object.keys(collabsByTask).length, 'tasks have collaborators');
+
+    // Attach collaborators to tasks
+    return tasks.map(task => ({
       ...task,
-      collaborators: task.collaborator_links?.map((link: { user: any }) => link.user).filter(Boolean) || []
+      collaborators: collabsByTask[task.id] || []
     }));
   },
 
@@ -33,21 +57,43 @@ export const OrgTaskService = {
     if (!isConfigured || !supabase) {
       throw new Error("Database not configured.");
     }
-    const { data, error } = await supabase
+    // Fetch org tasks for user
+    const { data: tasksData, error: tasksError } = await supabase
       .from('serhub_org_tasks')
       .select(`
         *,
         owner:serhub_profiles!owner_id(id, name, email, role, is_user),
-        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user),
-        collaborator_links:serhub_org_task_collaborators(user:serhub_profiles!user_id(id, name, email, role, is_user))
+        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user)
       `)
       .or(`owner_id.eq.${userId},supervisor_id.eq.${userId}`)
       .order('due_date');
-    if (error) throw error;
-    // Flatten collaborators from {user: Profile}[] to Profile[]
-    return (data || []).map(task => ({
+    if (tasksError) throw tasksError;
+
+    const tasks = tasksData || [];
+    if (tasks.length === 0) return [];
+
+    // Fetch all collaborators for these tasks
+    const taskIds = tasks.map(t => t.id);
+    const { data: collabData } = await supabase
+      .from('serhub_org_task_collaborators')
+      .select('org_task_id, user:serhub_profiles!user_id(id, name, email, role, is_user)')
+      .in('org_task_id', taskIds);
+
+    // Group collaborators by org_task_id
+    const collabsByTask: Record<string, any[]> = {};
+    (collabData || []).forEach(c => {
+      if (!collabsByTask[c.org_task_id]) {
+        collabsByTask[c.org_task_id] = [];
+      }
+      if (c.user) {
+        collabsByTask[c.org_task_id].push(c.user);
+      }
+    });
+
+    // Attach collaborators to tasks
+    return tasks.map(task => ({
       ...task,
-      collaborators: task.collaborator_links?.map((link: { user: any }) => link.user).filter(Boolean) || []
+      collaborators: collabsByTask[task.id] || []
     }));
   },
 
