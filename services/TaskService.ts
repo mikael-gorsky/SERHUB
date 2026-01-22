@@ -35,6 +35,10 @@ export const TaskService = {
       .order('due_date');
     console.log('TaskService.getAll result:', { count: data?.length, error });
     if (error) throw error;
+    // Debug: log first task's collaborator_links
+    if (data && data.length > 0) {
+      console.log('TaskService.getAll - first task collaborator_links:', data[0].collaborator_links);
+    }
     // Flatten collaborators from {user: Profile}[] to Profile[]
     return (data || []).map(task => ({
       ...task,
