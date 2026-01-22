@@ -9,7 +9,7 @@ interface TaskCardProps {
   showFullNames?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = false }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true }) => {
   // Get progress-based status for the progress bar
   const progressStatus = getProgressStatus(task.status, task.blocked);
 

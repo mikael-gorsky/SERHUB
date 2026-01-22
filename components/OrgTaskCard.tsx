@@ -10,7 +10,7 @@ interface OrgTaskCardProps {
   showFullNames?: boolean;
 }
 
-const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, onClick, showFullNames = false }) => {
+const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, onClick, showFullNames = true }) => {
   // Get progress-based status for the progress bar
   const progressStatus = getProgressStatus(task.status, task.blocked);
 

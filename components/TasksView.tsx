@@ -234,7 +234,6 @@ const TasksView = () => {
                       task={task}
                       linkedTaskCount={linkedTaskCounts[task.id] || 0}
                       onClick={canEditTasks(currentProfile) ? () => console.log('Edit org task:', task.id) : undefined}
-                      showFullNames={true}
                     />
                   ))
                 ) : (
@@ -278,7 +277,6 @@ const TasksView = () => {
                               key={task.id}
                               task={task}
                               onClick={canEditTasks(currentProfile) ? () => console.log('Edit task:', task.id) : undefined}
-                              showFullNames={true}
                             />
                           ))}
                         </div>
