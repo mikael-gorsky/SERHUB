@@ -1,7 +1,6 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Task, Profile } from '../types';
-import UserAvatar from './UserAvatar';
 import { getProgressStatus } from '../lib/progressUtils';
 
 interface TaskCardProps {
@@ -54,16 +53,35 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
   };
 
-  // Get owner info
-  const getOwnerInfo = () => {
+  // Get all contributors (owner + collaborators) sorted by priority:
+  // 1. External contributors (is_user = false)
+  // 2. Login users (is_user = true, role != admin)
+  // 3. Admin (role = admin)
+  const getSortedContributors = (): Profile[] => {
+    const contributors: Profile[] = [];
+
+    // Add owner
     if (task.owner) {
-      const owner = task.owner as Profile;
-      return { name: owner.name, role: owner.role, is_user: owner.is_user };
+      contributors.push(task.owner as Profile);
     }
-    return null;
+
+    // Add collaborators
+    if (task.collaborators && task.collaborators.length > 0) {
+      contributors.push(...task.collaborators);
+    }
+
+    // Sort: external first, then login users, then admin last
+    return contributors.sort((a, b) => {
+      const getPriority = (p: Profile) => {
+        if (p.role === 'admin') return 3;
+        if (p.is_user) return 2;
+        return 1; // external collaborator
+      };
+      return getPriority(a) - getPriority(b);
+    });
   };
 
-  const ownerInfo = getOwnerInfo();
+  const sortedContributors = getSortedContributors();
 
   return (
     <div
@@ -108,24 +126,25 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             </div>
           </div>
 
-          {/* Owner/Collaborators */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {ownerInfo && (
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {ownerInfo.name}
-              </span>
-            )}
-            <UserAvatar
-              name={ownerInfo?.name || 'User'}
-              role={ownerInfo?.role}
-              isUser={ownerInfo?.is_user}
-              size="md"
-            />
-            {task.collaborators && task.collaborators.length > 0 && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full font-medium">
-                +{task.collaborators.length}
-              </span>
-            )}
+          {/* Contributors - names that fit, sorted by priority */}
+          <div className="flex items-center gap-2 flex-shrink-0 max-w-[40%] overflow-hidden">
+            <div className="flex items-center gap-1.5 overflow-hidden">
+              {sortedContributors.map((contributor, index) => (
+                <span
+                  key={contributor.id}
+                  className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
+                    contributor.role === 'admin'
+                      ? 'bg-purple-100 text-purple-700'
+                      : contributor.is_user
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                  title={contributor.name}
+                >
+                  {contributor.name.split(' ')[0]}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
