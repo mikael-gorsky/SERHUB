@@ -86,9 +86,9 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
     if (isConfigured && supabase) {
       const { data } = await supabase
         .from('serhub_task_collaborators')
-        .select('profile_id')
+        .select('user_id')
         .eq('task_id', task.id);
-      collaboratorIds = data?.map(c => c.profile_id) || [];
+      collaboratorIds = data?.map(c => c.user_id) || [];
     }
 
     setFormData({
@@ -175,9 +175,9 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
 
         // Add new collaborators
         if (formData.collaborator_ids.length > 0) {
-          const collaboratorInserts = formData.collaborator_ids.map(profileId => ({
+          const collaboratorInserts = formData.collaborator_ids.map(userId => ({
             task_id: taskId,
-            profile_id: profileId
+            user_id: userId
           }));
           await supabase
             .from('serhub_task_collaborators')

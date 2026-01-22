@@ -29,12 +29,17 @@ export const TaskService = {
         *,
         owner:serhub_profiles!owner_id(id, name, email, role, is_user),
         supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user),
-        section:serhub_sections!section_id(id, number, title)
+        section:serhub_sections!section_id(id, number, title),
+        collaborator_links:serhub_task_collaborators(user:serhub_profiles!user_id(id, name, email, role, is_user))
       `)
       .order('due_date');
     console.log('TaskService.getAll result:', { count: data?.length, error });
     if (error) throw error;
-    return data || [];
+    // Flatten collaborators from {user: Profile}[] to Profile[]
+    return (data || []).map(task => ({
+      ...task,
+      collaborators: task.collaborator_links?.map((link: { user: any }) => link.user).filter(Boolean) || []
+    }));
   },
 
   getBySectionId: async (sectionId: string): Promise<Task[]> => {
@@ -46,12 +51,17 @@ export const TaskService = {
       .select(`
         *,
         owner:serhub_profiles!owner_id(id, name, email, role, is_user),
-        reviewer:serhub_profiles!reviewer_id(id, name, email, role, is_user)
+        reviewer:serhub_profiles!reviewer_id(id, name, email, role, is_user),
+        collaborator_links:serhub_task_collaborators(user:serhub_profiles!user_id(id, name, email, role, is_user))
       `)
       .eq('section_id', sectionId)
       .order('due_date');
     if (error) throw error;
-    return data || [];
+    // Flatten collaborators from {user: Profile}[] to Profile[]
+    return (data || []).map(task => ({
+      ...task,
+      collaborators: task.collaborator_links?.map((link: { user: any }) => link.user).filter(Boolean) || []
+    }));
   },
 
   getByUserId: async (userId: string): Promise<Task[]> => {

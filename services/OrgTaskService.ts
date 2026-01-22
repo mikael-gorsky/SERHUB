@@ -12,12 +12,17 @@ export const OrgTaskService = {
       .select(`
         *,
         owner:serhub_profiles!owner_id(id, name, email, role, is_user),
-        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user)
+        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user),
+        collaborator_links:serhub_org_task_collaborators(user:serhub_profiles!user_id(id, name, email, role, is_user))
       `)
       .order('due_date');
     console.log('OrgTaskService.getAll result:', { count: data?.length, error });
     if (error) throw error;
-    return data || [];
+    // Flatten collaborators from {user: Profile}[] to Profile[]
+    return (data || []).map(task => ({
+      ...task,
+      collaborators: task.collaborator_links?.map((link: { user: any }) => link.user).filter(Boolean) || []
+    }));
   },
 
   getByUserId: async (userId: string): Promise<OrgTask[]> => {
@@ -29,12 +34,17 @@ export const OrgTaskService = {
       .select(`
         *,
         owner:serhub_profiles!owner_id(id, name, email, role, is_user),
-        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user)
+        supervisor:serhub_profiles!supervisor_id(id, name, email, role, is_user),
+        collaborator_links:serhub_org_task_collaborators(user:serhub_profiles!user_id(id, name, email, role, is_user))
       `)
       .or(`owner_id.eq.${userId},supervisor_id.eq.${userId}`)
       .order('due_date');
     if (error) throw error;
-    return data || [];
+    // Flatten collaborators from {user: Profile}[] to Profile[]
+    return (data || []).map(task => ({
+      ...task,
+      collaborators: task.collaborator_links?.map((link: { user: any }) => link.user).filter(Boolean) || []
+    }));
   },
 
   getById: async (id: string): Promise<OrgTask | null> => {
