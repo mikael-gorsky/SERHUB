@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, MoreHorizontal, X, Save, Loader2, AlertTriangle, CheckCircle2, Users } from 'lucide-react';
 import { Section, Task, Profile } from '../types';
 import { getTasksBySection, getProfiles, updateTask, createTask, supabase, isConfigured } from '../lib/supabase';
-import TaskCard from './TaskCard';
+import DashboardTaskCard from './DashboardTaskCard';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useSections } from '../contexts/SectionsContext';
@@ -279,7 +279,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
           ) : (
             <div className="space-y-4">
               {tasks.map(task => (
-                <TaskCard
+                <DashboardTaskCard
                   key={task.id}
                   task={task}
                   onClick={canEdit ? () => openEditModal(task) : undefined}

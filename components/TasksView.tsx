@@ -11,7 +11,7 @@ import { TaskService } from '../services/TaskService';
 import { SectionService } from '../services/SectionService';
 import { UserService } from '../services/UserService';
 import { Task, Section, User } from '../types';
-import TaskCard from './TaskCard';
+import DashboardTaskCard from './DashboardTaskCard';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { canCreateTasks, canEditTasks } from '../lib/permissions';
@@ -191,7 +191,7 @@ const TasksView = () => {
                         </h4>
                         <div className="space-y-3">
                           {tasksBySection[section.id].map(task => (
-                            <TaskCard
+                            <DashboardTaskCard
                               key={task.id}
                               task={task}
                               onClick={canEditTasks(currentProfile) ? () => console.log('Edit task:', task.id) : undefined}

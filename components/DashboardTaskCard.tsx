@@ -3,15 +3,26 @@ import { Calendar } from 'lucide-react';
 import { Task, Profile } from '../types';
 import { getProgressStatus } from '../lib/progressUtils';
 
-interface TaskCardProps {
+interface DashboardTaskCardProps {
   task: Task;
   onClick?: () => void;
   showFullNames?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true }) => {
+const DashboardTaskCard: React.FC<DashboardTaskCardProps> = ({ task, onClick, showFullNames = true }) => {
   // Get progress-based status for the progress bar
   const progressStatus = getProgressStatus(task.status, task.blocked);
+
+  // Get section-based background color
+  // Section 0 = light pink, Sections 1-5 = off-white
+  const getSectionBackground = () => {
+    const sectionNumber = task.section?.number || '';
+    const num = parseInt(sectionNumber.replace(/[^0-9]/g, ''));
+    if (num === 0 || sectionNumber === '0') {
+      return 'bg-pink-50';
+    }
+    return 'bg-gray-50/50';
+  };
 
   // Determine deadline-based status for the card border and label
   const getDeadlineStatus = () => {
@@ -47,6 +58,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true
   };
 
   const deadlineStatus = getDeadlineStatus();
+  const sectionBackground = getSectionBackground();
 
   // Format date
   const formatDate = (dateStr: string) => {
@@ -86,7 +98,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true
 
   return (
     <div
-      className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${deadlineStatus.borderColor}`}
+      className={`${sectionBackground} rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${deadlineStatus.borderColor}`}
       onClick={onClick}
     >
       <div className="p-5">
@@ -182,4 +194,4 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true
   );
 };
 
-export default TaskCard;
+export default DashboardTaskCard;

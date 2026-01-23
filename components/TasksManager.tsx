@@ -5,7 +5,6 @@ import {
   Loader2,
   X,
   Save,
-  ChevronRight,
   CheckCircle2,
   Plus,
   AlertTriangle,
@@ -22,6 +21,7 @@ import UserAvatar from './UserAvatar';
 import { supabase, isConfigured } from '../lib/supabase';
 import { canCreateTasks, canEditTasks } from '../lib/permissions';
 import { getProgressStatus } from '../lib/progressUtils';
+import TaskListCard from './TaskListCard';
 
 interface TaskFormData {
   id?: string;
@@ -87,27 +87,6 @@ const TasksManager = () => {
       color: status.color,
       gradient: status.gradient
     };
-  };
-
-  const getStepStyles = (sectionId: string) => {
-    const section = sections.find(s => s.id === sectionId);
-    if (!section) return "bg-white border-transparent";
-
-    // Special styling for Organizational Tasks section
-    if (section.number === 'Org' || section.title.toLowerCase().includes('organizational')) {
-      return "bg-purple-50 text-purple-700 border-purple-100 shadow-purple-100/50";
-    }
-
-    const num = parseInt(section.number.replace(/[^0-9]/g, ''));
-    switch(num) {
-      case 0: return "bg-sky-50 text-sky-700 border-sky-100 shadow-sky-100/50"; // Executive Summary
-      case 1: return "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-emerald-100/50";
-      case 2: return "bg-gradient-to-br from-emerald-50 to-amber-50 text-hit-blue border-emerald-100 shadow-emerald-100/30";
-      case 3: return "bg-amber-50 text-amber-700 border-amber-100 shadow-amber-100/50";
-      case 4: return "bg-gradient-to-br from-amber-50 to-rose-50 text-hit-blue border-amber-100 shadow-amber-100/30";
-      case 5: return "bg-rose-50 text-rose-700 border-rose-100 shadow-rose-100/50";
-      default: return "bg-gray-50 text-gray-700 border-gray-100 shadow-gray-100/50";
-    }
   };
 
   const isOrgSection = (sectionId: string) => {
@@ -242,22 +221,6 @@ const TasksManager = () => {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '--';
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const getProfileName = (profileId: string) => {
-    const profile = profiles.find(p => p.id === profileId);
-    return profile ? profile.name : 'Unknown';
-  };
-
-  const getProfile = (profileId: string) => {
-    return profiles.find(p => p.id === profileId);
-  };
-
   const toggleCollaborator = (profileId: string) => {
     if (!formData) return;
     const ids = formData.collaborator_ids;
@@ -266,119 +229,6 @@ const TasksManager = () => {
     } else {
       setFormData({ ...formData, collaborator_ids: [...ids, profileId] });
     }
-  };
-
-  // Get first line of description (up to first period or newline)
-  const getFirstLine = (text: string | null | undefined) => {
-    if (!text) return '';
-    const firstLine = text.split(/[.\n]/)[0];
-    return firstLine.length > 80 ? firstLine.slice(0, 80) + '...' : firstLine;
-  };
-
-  const renderTaskCard = (task: Task) => {
-    const owner = getProfile(task.owner_id);
-    const ownerName = owner?.name || 'Unknown';
-    const status = getStatusLabel(task.status, task.blocked);
-    const isDone = task.status === 100;
-    const stepStyles = getStepStyles(task.section_id);
-    const section = sections.find(s => s.id === task.section_id);
-    const descriptionLine = getFirstLine(task.description);
-    const canEdit = canEditTasks(currentProfile);
-
-    return (
-      <div
-        key={task.id}
-        onClick={() => canEdit && openEditModal(task)}
-        className={`p-5 rounded-2xl border shadow-sm transition-all group ${stepStyles} ${isDone ? 'opacity-70' : ''} ${canEdit ? 'hover:shadow-xl hover:-translate-y-1 cursor-pointer' : 'cursor-default'}`}
-      >
-        {/* Top Row: Section badge, Title, Due date, Owner */}
-        <div className="flex items-center gap-5">
-          <div className="w-14 shrink-0 text-center">
-            <span className="bg-hit-dark text-white text-[9px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
-              {section?.number || '??'}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className={`text-base font-black group-hover:text-hit-blue transition-colors truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-              {task.title}
-            </h4>
-          </div>
-          <div className="flex items-center gap-6 shrink-0">
-            <div className="w-16 text-center">
-              <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Due</span>
-              <span className="text-sm font-black text-gray-800">{formatDate(task.due_date)}</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-200 group-hover:text-hit-blue transition-colors" />
-          </div>
-        </div>
-
-        {/* Description Line */}
-        {descriptionLine && (
-          <p className={`text-sm font-medium mt-2 ml-[76px] ${isDone ? 'text-gray-400' : 'text-gray-500'}`}>
-            {descriptionLine}
-          </p>
-        )}
-
-        {/* Blocked Warning */}
-        {task.blocked && (
-          <div className="flex items-center gap-2 text-xs text-red-600 mt-2 ml-[76px]">
-            <AlertTriangle size={12} />
-            <span className="font-bold">Blocked: {task.blocked_reason}</span>
-          </div>
-        )}
-
-        {/* Progress Bar Row */}
-        <div className="flex items-center gap-4 mt-3 ml-[76px]">
-          <div className="flex-1 max-w-xs">
-            <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden border border-black/5">
-              <div
-                className="h-full transition-all duration-500 rounded-full"
-                style={{
-                  width: `${task.status}%`,
-                  background: status.gradient
-                }}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-gray-600">{task.status}%</span>
-            <div className={`text-center px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border bg-white shadow-sm ${status.color}`}>
-              {status.label}
-            </div>
-          </div>
-          {/* All contributors (collaborators + owner last) */}
-          {(() => {
-            // Gather all contributors: collaborators first, owner last
-            const allContributors: any[] = [];
-            if (task.collaborators && task.collaborators.length > 0) {
-              allContributors.push(...task.collaborators);
-            }
-            if (owner) {
-              allContributors.push(owner);
-            }
-            if (allContributors.length === 0) return null;
-            return (
-              <div className="flex items-center gap-1.5 ml-2">
-                {allContributors.map((person: any) => (
-                  <span
-                    key={person.id}
-                    className={`text-sm font-bold px-2 py-0.5 rounded-full text-gray-700 ${
-                      person.role === 'admin'
-                        ? 'bg-blue-100'
-                        : person.is_user
-                        ? 'bg-green-100'
-                        : 'bg-gray-200'
-                    }`}
-                  >
-                    {person.name}
-                  </span>
-                ))}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-    );
   };
 
   if (loading) {
@@ -493,7 +343,15 @@ const TasksManager = () => {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    {orgTasks.map(task => renderTaskCard(task))}
+                    {orgTasks.map(task => (
+                      <TaskListCard
+                        key={task.id}
+                        task={task}
+                        section={sections.find(s => s.id === task.section_id)}
+                        onClick={() => openEditModal(task)}
+                        canEdit={canEditTasks(currentProfile)}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -511,7 +369,15 @@ const TasksManager = () => {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    {reportTasks.map(task => renderTaskCard(task))}
+                    {reportTasks.map(task => (
+                      <TaskListCard
+                        key={task.id}
+                        task={task}
+                        section={sections.find(s => s.id === task.section_id)}
+                        onClick={() => openEditModal(task)}
+                        canEdit={canEditTasks(currentProfile)}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
