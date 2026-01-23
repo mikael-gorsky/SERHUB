@@ -77,8 +77,8 @@ const TaskListCard: React.FC<TaskListCardProps> = ({ task, section, onClick, can
     >
       {/* Top Row: Section badge, Title, Due date */}
       <div className="flex items-center gap-5">
-        <div className="w-14 shrink-0 text-center">
-          <span className="bg-hit-dark text-white text-[9px] font-black px-2 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
+        <div className="w-16 shrink-0 text-center">
+          <span className="bg-hit-dark text-white text-[11px] font-black px-2.5 py-1 rounded-md uppercase group-hover:bg-hit-blue transition-colors">
             {displaySection?.number || '??'}
           </span>
         </div>
