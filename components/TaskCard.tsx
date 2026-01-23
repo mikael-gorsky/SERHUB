@@ -127,6 +127,25 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true
             </div>
           </div>
 
+          {/* Contributors - vertical column on right side of header */}
+          {sortedContributors.length > 0 && (
+            <div className="flex flex-col items-end gap-1">
+              {sortedContributors.map((contributor) => (
+                <span
+                  key={contributor.id}
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    contributor.role === 'admin'
+                      ? 'bg-purple-100 text-purple-700'
+                      : contributor.is_user
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {showFullNames ? contributor.name : contributor.name.split(' ')[0]}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Blocked reason */}
@@ -158,26 +177,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true
             />
           </div>
         </div>
-
-        {/* Contributors - column layout, left-aligned */}
-        {sortedContributors.length > 0 && (
-          <div className="mt-4 flex flex-col items-start gap-1.5">
-            {sortedContributors.map((contributor) => (
-              <span
-                key={contributor.id}
-                className={`text-xs px-2 py-0.5 rounded-full ${
-                  contributor.role === 'admin'
-                    ? 'bg-purple-100 text-purple-700'
-                    : contributor.is_user
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {showFullNames ? contributor.name : contributor.name.split(' ')[0]}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
