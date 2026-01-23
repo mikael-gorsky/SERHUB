@@ -191,7 +191,9 @@ export const getTasks = async (): Promise<Task[]> => {
 
 export const getTasksBySection = async (sectionId: string): Promise<Task[]> => {
   if (!supabase) return [];
-  const { data, error } = await supabase
+
+  // Fetch tasks with owner and supervisor
+  const { data: tasks, error } = await supabase
     .from('serhub_tasks')
     .select(`
       *,
@@ -200,11 +202,41 @@ export const getTasksBySection = async (sectionId: string): Promise<Task[]> => {
     `)
     .eq('section_id', sectionId)
     .order('due_date');
+
   if (error) {
     console.error('Error fetching section tasks:', error);
     return [];
   }
-  return data || [];
+
+  if (!tasks || tasks.length === 0) return [];
+
+  // Fetch collaborators for all tasks
+  const taskIds = tasks.map(t => t.id);
+  const { data: collabData, error: collabError } = await supabase
+    .from('serhub_task_collaborators')
+    .select('task_id, user:serhub_profiles!user_id(id, name, email, role, is_user)')
+    .in('task_id', taskIds);
+
+  if (collabError) {
+    console.error('Error fetching collaborators:', collabError);
+  }
+
+  // Group collaborators by task_id
+  const collabsByTask: Record<string, any[]> = {};
+  (collabData || []).forEach(c => {
+    if (!collabsByTask[c.task_id]) {
+      collabsByTask[c.task_id] = [];
+    }
+    if (c.user) {
+      collabsByTask[c.task_id].push(c.user);
+    }
+  });
+
+  // Attach collaborators to tasks
+  return tasks.map(task => ({
+    ...task,
+    collaborators: collabsByTask[task.id] || []
+  }));
 };
 
 export const getTasksByUser = async (userId: string): Promise<Task[]> => {

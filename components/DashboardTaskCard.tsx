@@ -14,14 +14,14 @@ const DashboardTaskCard: React.FC<DashboardTaskCardProps> = ({ task, onClick, sh
   const progressStatus = getProgressStatus(task.status, task.blocked);
 
   // Get section-based background color
-  // Section 0 = light pink, Sections 1-5 = off-white
+  // Section 0 = light red, Sections 1-5 = light beige
   const getSectionBackground = () => {
     const sectionNumber = task.section?.number || '';
     const num = parseInt(sectionNumber.replace(/[^0-9]/g, ''));
     if (num === 0 || sectionNumber === '0') {
-      return 'bg-pink-50';
+      return 'bg-red-50 border-red-200';
     }
-    return 'bg-gray-50/50';
+    return 'bg-amber-50/70 border-amber-100';
   };
 
   // Determine deadline-based status for the card border and label
@@ -98,7 +98,7 @@ const DashboardTaskCard: React.FC<DashboardTaskCardProps> = ({ task, onClick, sh
 
   return (
     <div
-      className={`${sectionBackground} rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${deadlineStatus.borderColor}`}
+      className={`${sectionBackground} rounded-xl border shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 ${deadlineStatus.borderColor}`}
       onClick={onClick}
     >
       <div className="p-5">

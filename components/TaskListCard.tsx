@@ -15,14 +15,14 @@ const TaskListCard: React.FC<TaskListCardProps> = ({ task, section, onClick, can
   const isDone = task.status === 100;
 
   // Get section-based background color
-  // Section 0 = light pink, Sections 1-5 = off-white
+  // Section 0 = light red, Sections 1-5 = light beige
   const getSectionBackground = () => {
     const sectionNumber = section?.number || task.section?.number || '';
     const num = parseInt(sectionNumber.replace(/[^0-9]/g, ''));
     if (num === 0 || sectionNumber === '0') {
-      return 'bg-pink-50 border-pink-100';
+      return 'bg-red-50 border-red-200';
     }
-    return 'bg-gray-50/50 border-gray-100';
+    return 'bg-amber-50/70 border-amber-100';
   };
 
   const sectionBackground = getSectionBackground();
