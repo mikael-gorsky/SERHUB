@@ -136,26 +136,6 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
             </div>
           </div>
 
-          {/* Contributors - names that fit, sorted by priority */}
-          <div className="flex items-center gap-2 flex-shrink-0 max-w-[40%] overflow-hidden">
-            <div className="flex items-center gap-1.5 overflow-hidden">
-              {sortedContributors.map((contributor) => (
-                <span
-                  key={contributor.id}
-                  className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
-                    contributor.role === 'admin'
-                      ? 'bg-purple-100 text-purple-700'
-                      : contributor.is_user
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}
-                  title={contributor.name}
-                >
-                  {showFullNames ? contributor.name : contributor.name.split(' ')[0]}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Blocked reason */}
@@ -187,6 +167,26 @@ const OrgTaskCard: React.FC<OrgTaskCardProps> = ({ task, linkedTaskCount = 0, on
             />
           </div>
         </div>
+
+        {/* Contributors - column layout, left-aligned */}
+        {sortedContributors.length > 0 && (
+          <div className="mt-4 flex flex-col items-start gap-1.5">
+            {sortedContributors.map((contributor) => (
+              <span
+                key={contributor.id}
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  contributor.role === 'admin'
+                    ? 'bg-purple-100 text-purple-700'
+                    : contributor.is_user
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {showFullNames ? contributor.name : contributor.name.split(' ')[0]}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
