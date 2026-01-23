@@ -133,12 +133,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, showFullNames = true
               {sortedContributors.map((contributor) => (
                 <span
                   key={contributor.id}
-                  className={`text-xs px-2 py-0.5 rounded-full ${
+                  className={`text-sm font-bold px-2 py-0.5 rounded-full text-gray-700 ${
                     contributor.role === 'admin'
-                      ? 'bg-purple-100 text-purple-700'
+                      ? 'bg-blue-100'
                       : contributor.is_user
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-green-100'
+                      : 'bg-gray-200'
                   }`}
                 >
                   {showFullNames ? contributor.name : contributor.name.split(' ')[0]}

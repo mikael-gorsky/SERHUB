@@ -237,7 +237,6 @@ const TeamManager = () => {
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <Users className="text-hit-blue" /> Directory
             </h2>
-            <p className="text-sm text-gray-500 mt-1">Manage contributors and collaborators.</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -267,8 +266,8 @@ const TeamManager = () => {
         <div className="flex-1 overflow-y-auto">
           {/* Users Section */}
           <div className="p-6 border-b border-gray-100">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <UserIcon size={12} /> Login Users ({users.length})
+            <h3 className="text-sm font-black text-gray-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+              <UserIcon size={14} /> Login Users ({users.length})
             </h3>
             <div className="space-y-2">
               {users.map(profile => {
@@ -318,8 +317,8 @@ const TeamManager = () => {
 
           {/* External Collaborators Section */}
           <div className="p-6">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Users size={12} /> External Collaborators ({collaborators.length})
+            <h3 className="text-sm font-black text-gray-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+              <Users size={14} /> External Contributors ({collaborators.length})
             </h3>
             <div className="space-y-2">
               {collaborators.map(profile => (
