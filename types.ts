@@ -100,44 +100,6 @@ export interface TaskDependency {
 }
 
 // ============================================
-// ORGANIZATIONAL TASK TYPES
-// ============================================
-
-export interface OrgTask {
-  id: string;
-  title: string;
-  description?: string;
-  owner_id: string;
-  supervisor_id?: string;
-  status: number; // 0-100 progress percentage
-  blocked: boolean;
-  blocked_reason?: string;
-  start_date: string;
-  due_date: string;
-  created_at: string;
-  updated_at: string;
-  // Joined data
-  owner?: Profile;
-  supervisor?: Profile;
-  collaborators?: Profile[];
-  linked_tasks?: Task[]; // Report tasks this org task feeds into
-}
-
-export interface OrgTaskLink {
-  id: string;
-  org_task_id: string;
-  report_task_id: string;
-  created_at: string;
-}
-
-export interface OrgTaskCollaborator {
-  id: string;
-  org_task_id: string;
-  user_id: string;
-  created_at: string;
-}
-
-// ============================================
 // MEETING TYPES
 // ============================================
 

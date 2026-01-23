@@ -3,38 +3,32 @@ import {
   Search,
   Loader2,
   Plus,
-  Briefcase,
   FileText,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
-import { OrgTaskService } from '../services/OrgTaskService';
 import { TaskService } from '../services/TaskService';
 import { SectionService } from '../services/SectionService';
 import { UserService } from '../services/UserService';
-import { OrgTask, Task, Section, User } from '../types';
-import OrgTaskCard from './OrgTaskCard';
+import { Task, Section, User } from '../types';
 import TaskCard from './TaskCard';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { canCreateTasks, canEditTasks } from '../lib/permissions';
 
 const TasksView = () => {
-  const { currentUser, currentProfile } = useAuth();
-  const [orgTasks, setOrgTasks] = useState<OrgTask[]>([]);
-  const [reportTasks, setReportTasks] = useState<Task[]>([]);
+  const { currentProfile } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [linkedTaskCounts, setLinkedTaskCounts] = useState<Record<string, number>>({});
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [ownerFilter, setOwnerFilter] = useState('All');
 
   // Collapsible sections
-  const [orgTasksExpanded, setOrgTasksExpanded] = useState(true);
-  const [reportTasksExpanded, setReportTasksExpanded] = useState(true);
+  const [tasksExpanded, setTasksExpanded] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -43,44 +37,19 @@ const TasksView = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch each independently to prevent one failure from breaking all
-      const [orgResult, reportResult, sectionsResult, usersResult] = await Promise.allSettled([
-        OrgTaskService.getAll(),
+      const [tasksResult, sectionsResult, usersResult] = await Promise.allSettled([
         TaskService.getAll(),
         SectionService.getAll(),
         UserService.getAllAsUsers()
       ]);
 
-      const orgData = orgResult.status === 'fulfilled' ? orgResult.value : [];
-      const reportData = reportResult.status === 'fulfilled' ? reportResult.value : [];
+      const tasksData = tasksResult.status === 'fulfilled' ? tasksResult.value : [];
       const sectionsData = sectionsResult.status === 'fulfilled' ? sectionsResult.value : [];
       const usersData = usersResult.status === 'fulfilled' ? usersResult.value : [];
 
-      console.log('TasksView fetchData results:', {
-        orgTasks: orgData.length,
-        reportTasks: reportData.length,
-        sections: sectionsData.length,
-        users: usersData.length,
-        orgError: orgResult.status === 'rejected' ? orgResult.reason : null,
-        reportError: reportResult.status === 'rejected' ? reportResult.reason : null
-      });
-
-      setOrgTasks(orgData);
-      setReportTasks(reportData);
+      setTasks(tasksData);
       setSections(sectionsData);
       setUsers(usersData);
-
-      // Fetch linked task counts for each org task
-      const counts: Record<string, number> = {};
-      for (const task of orgData) {
-        try {
-          const linkedTasks = await OrgTaskService.getLinkedTasks(task.id);
-          counts[task.id] = linkedTasks.length;
-        } catch {
-          counts[task.id] = 0;
-        }
-      }
-      setLinkedTaskCounts(counts);
     } catch (error) {
       console.error("Error fetching tasks:", error);
     } finally {
@@ -88,28 +57,19 @@ const TasksView = () => {
     }
   };
 
-  const filteredOrgTasks = useMemo(() => {
-    return orgTasks.filter(task => {
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
       const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesOwner = ownerFilter === 'All' || task.owner_id === ownerFilter;
       return matchesSearch && matchesOwner;
     });
-  }, [orgTasks, searchTerm, ownerFilter]);
+  }, [tasks, searchTerm, ownerFilter]);
 
-  const filteredReportTasks = useMemo(() => {
-    return reportTasks.filter(task => {
-      const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesOwner = ownerFilter === 'All' || task.owner_id === ownerFilter;
-      return matchesSearch && matchesOwner;
-    });
-  }, [reportTasks, searchTerm, ownerFilter]);
-
-  // Group report tasks by section
+  // Group tasks by section
   const tasksBySection = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
-    filteredReportTasks.forEach(task => {
+    filteredTasks.forEach(task => {
       const sectionId = task.section_id;
       if (!grouped[sectionId]) {
         grouped[sectionId] = [];
@@ -117,7 +77,7 @@ const TasksView = () => {
       grouped[sectionId].push(task);
     });
     return grouped;
-  }, [filteredReportTasks]);
+  }, [filteredTasks]);
 
   if (loading) {
     return (
@@ -167,16 +127,8 @@ const TasksView = () => {
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Summary</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Org Tasks</span>
-              <span className="text-sm font-bold text-gray-800">{filteredOrgTasks.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Report Tasks</span>
-              <span className="text-sm font-bold text-gray-800">{filteredReportTasks.length}</span>
-            </div>
-            <div className="border-t pt-3 flex justify-between items-center">
-              <span className="text-sm font-semibold text-gray-700">Total</span>
-              <span className="text-sm font-bold text-teal-600">{filteredOrgTasks.length + filteredReportTasks.length}</span>
+              <span className="text-sm text-gray-600">Total Tasks</span>
+              <span className="text-sm font-bold text-teal-600">{filteredTasks.length}</span>
             </div>
           </div>
         </div>
@@ -199,7 +151,7 @@ const TasksView = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Search all tasks..."
+              placeholder="Search tasks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 transition-all"
@@ -209,57 +161,23 @@ const TasksView = () => {
 
         {/* Tasks List */}
         <div className="flex-1 overflow-y-auto space-y-6 pb-6">
-          {/* Organizational Tasks Section */}
+          {/* Tasks Section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <button
-              onClick={() => setOrgTasksExpanded(!orgTasksExpanded)}
-              className="w-full p-4 flex items-center justify-between bg-purple-50 hover:bg-purple-100 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <Briefcase size={20} className="text-purple-600" />
-                <span className="font-semibold text-purple-900">Organizational Tasks</span>
-                <span className="text-xs bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full font-medium">
-                  {filteredOrgTasks.length}
-                </span>
-              </div>
-              {orgTasksExpanded ? <ChevronDown size={20} className="text-purple-600" /> : <ChevronRight size={20} className="text-purple-600" />}
-            </button>
-
-            {orgTasksExpanded && (
-              <div className="p-4 space-y-4">
-                {filteredOrgTasks.length > 0 ? (
-                  filteredOrgTasks.map(task => (
-                    <OrgTaskCard
-                      key={task.id}
-                      task={task}
-                      linkedTaskCount={linkedTaskCounts[task.id] || 0}
-                      onClick={canEditTasks(currentProfile) ? () => console.log('Edit org task:', task.id) : undefined}
-                    />
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">No organizational tasks found</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Report Tasks Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <button
-              onClick={() => setReportTasksExpanded(!reportTasksExpanded)}
+              onClick={() => setTasksExpanded(!tasksExpanded)}
               className="w-full p-4 flex items-center justify-between bg-teal-50 hover:bg-teal-100 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <FileText size={20} className="text-teal-600" />
-                <span className="font-semibold text-teal-900">Report Tasks</span>
+                <span className="font-semibold text-teal-900">Tasks</span>
                 <span className="text-xs bg-teal-200 text-teal-700 px-2 py-0.5 rounded-full font-medium">
-                  {filteredReportTasks.length}
+                  {filteredTasks.length}
                 </span>
               </div>
-              {reportTasksExpanded ? <ChevronDown size={20} className="text-teal-600" /> : <ChevronRight size={20} className="text-teal-600" />}
+              {tasksExpanded ? <ChevronDown size={20} className="text-teal-600" /> : <ChevronRight size={20} className="text-teal-600" />}
             </button>
 
-            {reportTasksExpanded && (
+            {tasksExpanded && (
               <div className="p-4 space-y-6">
                 {Object.keys(tasksBySection).length > 0 ? (
                   sections
@@ -283,7 +201,7 @@ const TasksView = () => {
                       </div>
                     ))
                 ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">No report tasks found</p>
+                  <p className="text-sm text-gray-500 text-center py-8">No tasks found</p>
                 )}
               </div>
             )}
