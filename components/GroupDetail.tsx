@@ -157,7 +157,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
     setOwnerFilter('All');
   };
 
-  const hasActiveFilters = searchTerm || progressFilter !== 'All' || sectionFilter !== 'All' || ownerFilter !== 'All';
+  const hasActiveFilters = searchTerm || progressFilter !== 'All' || sectionFilter !== 'All';
 
   if (loading) {
     return (
@@ -370,21 +370,21 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
         {/* Link Tasks Panel - Shows when "Add Linked Tasks" is clicked */}
         {isAdmin && showLinkPanel && (
           <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
-            {/* Panel Header */}
-            <div className="bg-gradient-to-r from-teal-600 to-emerald-500 p-4">
+            {/* Panel Header - lighter to show it's secondary */}
+            <div className="bg-gradient-to-r from-teal-100 to-emerald-100 p-4 border-b border-teal-200">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white flex items-center gap-2">
+                <h4 className="text-sm font-bold text-teal-700 flex items-center gap-2">
                   <Search size={18} />
                   Select Tasks to Link
                 </h4>
                 <button
                   onClick={() => setShowLinkPanel(false)}
-                  className="text-white/70 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
+                  className="text-teal-500 hover:text-teal-700 transition-colors p-1 hover:bg-teal-200/50 rounded-lg"
                 >
                   <X size={18} />
                 </button>
               </div>
-              <p className="text-white/70 text-xs mt-1">{availableTasks.length} tasks available</p>
+              <p className="text-teal-600/70 text-xs mt-1">{availableTasks.length} tasks available</p>
             </div>
 
             {/* Content */}
@@ -449,15 +449,6 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
                         <PlayCircle size={10} />
                         Active
                       </button>
-                      <button
-                        onClick={() => setProgressFilter('Completed')}
-                        className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
-                          progressFilter === 'Completed' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        <CheckCircle2 size={10} />
-                        100%
-                      </button>
                     </div>
 
                     {/* Section Filter */}
@@ -470,20 +461,6 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
                       {level1Sections.map(s => (
                         <option key={s.id} value={s.id}>
                           {s.number}: {s.title}
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Owner Filter */}
-                    <select
-                      value={ownerFilter}
-                      onChange={(e) => setOwnerFilter(e.target.value)}
-                      className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 shadow-sm"
-                    >
-                      <option value="All">All Owners</option>
-                      {profiles.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
                         </option>
                       ))}
                     </select>
