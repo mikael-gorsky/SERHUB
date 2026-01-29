@@ -8,11 +8,11 @@ import {
   AlertTriangle,
   Plus,
   Loader2,
-  Users,
   Circle,
   PlayCircle,
   Filter,
-  X
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { Group, Task, Section, Profile } from '../types';
 import { GroupService } from '../services/GroupService';
@@ -27,9 +27,10 @@ import { canEditTasks } from '../lib/permissions';
 interface GroupDetailProps {
   group: Group;
   onRefresh: () => void;
+  onSelectGroup?: (group: Group) => void;
 }
 
-const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh }) => {
+const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGroup }) => {
   const { currentUser, currentProfile } = useAuth();
   const [linkedTasks, setLinkedTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
@@ -261,7 +262,8 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh }) => {
               {group.children!.map(child => (
                 <div
                   key={child.id}
-                  className="bg-white rounded-2xl p-4 border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => onSelectGroup?.(child)}
+                  className="bg-white rounded-2xl p-4 border border-gray-100 hover:border-teal-300 hover:shadow-lg transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -283,11 +285,14 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh }) => {
                         <span className="text-xs text-gray-400">{child.task_count || 0} tasks</span>
                       </div>
                     </div>
-                    {(child.progress || 0) > 0 && (
-                      <div className="text-lg font-black text-teal-600">
-                        {child.progress}%
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {(child.progress || 0) > 0 && (
+                        <div className="text-lg font-black text-teal-600">
+                          {child.progress}%
+                        </div>
+                      )}
+                      <ChevronRight size={20} className="text-gray-300 group-hover:text-teal-500 transition-colors" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -295,255 +300,253 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh }) => {
           </div>
         )}
 
-        {/* Linked Tasks Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+        {/* Linked Tasks Section - FIRST */}
+        <div className="mb-6">
+          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
             <Link size={14} />
             Linked Tasks ({linkedTasks.length})
           </h3>
-          {isAdmin && (
-            <button
-              onClick={() => setShowLinkPanel(!showLinkPanel)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg ${
-                showLinkPanel
-                  ? 'bg-gray-800 text-white shadow-gray-800/20'
-                  : 'bg-teal-600 text-white hover:bg-teal-700 shadow-teal-600/20'
-              }`}
-            >
-              {showLinkPanel ? <X size={18} /> : <Plus size={18} />}
-              {showLinkPanel ? 'Close' : 'Link Tasks'}
-            </button>
-          )}
-        </div>
 
-        {/* Link Tasks Panel with Filters */}
-        {showLinkPanel && isAdmin && (
-          <div className="bg-white rounded-[2rem] border border-teal-200 shadow-xl shadow-teal-600/10 mb-6 overflow-hidden">
-            {/* Filter Header */}
-            <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-6 border-b border-teal-100">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-black text-gray-800 flex items-center gap-2">
-                  <Filter size={16} className="text-teal-600" />
-                  Find Tasks to Link
-                </h4>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1"
-                  >
-                    <X size={14} />
-                    Clear Filters
-                  </button>
-                )}
-              </div>
-
-              {/* Search */}
-              <div className="relative mb-4">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search tasks by title or section..."
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
-                />
-              </div>
-
-              {/* Filter Buttons */}
-              <div className="flex flex-wrap gap-3">
-                {/* Progress Filter */}
-                <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm">
-                  <button
-                    onClick={() => setProgressFilter('All')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      progressFilter === 'All' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setProgressFilter('NotStarted')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                      progressFilter === 'NotStarted' ? 'bg-slate-600 text-white' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Circle size={12} />
-                    Not Started
-                  </button>
-                  <button
-                    onClick={() => setProgressFilter('InProgress')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                      progressFilter === 'InProgress' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    <PlayCircle size={12} />
-                    In Progress
-                  </button>
-                  <button
-                    onClick={() => setProgressFilter('Completed')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                      progressFilter === 'Completed' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    <CheckCircle2 size={12} />
-                    Completed
-                  </button>
-                </div>
-
-                {/* Section Filter */}
-                <select
-                  value={sectionFilter}
-                  onChange={(e) => setSectionFilter(e.target.value)}
-                  className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 shadow-sm"
-                >
-                  <option value="All">All Sections</option>
-                  {level1Sections.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.number}: {s.title}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Owner Filter */}
-                <select
-                  value={ownerFilter}
-                  onChange={(e) => setOwnerFilter(e.target.value)}
-                  className="px-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 shadow-sm"
-                >
-                  <option value="All">All Owners</option>
-                  {profiles.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Task List */}
-            <div className="max-h-80 overflow-auto">
-              {availableTasks.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <Search size={24} className="text-gray-300" />
-                  </div>
-                  <p className="text-gray-500 font-medium">
-                    {hasActiveFilters ? 'No tasks match your filters' : 'All tasks are already linked'}
-                  </p>
-                  {hasActiveFilters && (
+          {linkedTasks.length > 0 ? (
+            <div className="space-y-3 mb-6">
+              {linkedTasks.map(task => (
+                <div key={task.id} className="group relative">
+                  <TaskListCard
+                    task={task}
+                    section={sections.find(s => s.id === task.section_id)}
+                    onClick={() => {}}
+                    canEdit={canEditTasks(currentProfile)}
+                  />
+                  {isAdmin && (
                     <button
-                      onClick={clearFilters}
-                      className="mt-2 text-sm font-bold text-teal-600 hover:text-teal-700"
+                      onClick={() => handleUnlinkTask(task.id)}
+                      disabled={linkingTaskId === task.id}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-red-100 text-red-500 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50 shadow-lg"
+                      title="Unlink task"
                     >
-                      Clear filters
+                      {linkingTaskId === task.id ? (
+                        <Loader2 className="animate-spin" size={18} />
+                      ) : (
+                        <Unlink size={18} />
+                      )}
                     </button>
                   )}
                 </div>
-              ) : (
-                <div className="divide-y divide-gray-50">
-                  {availableTasks.slice(0, 30).map(task => (
-                    <div
-                      key={task.id}
-                      className="p-4 flex items-center gap-4 hover:bg-teal-50/50 transition-colors group"
-                    >
-                      <button
-                        onClick={() => handleLinkTask(task.id)}
-                        disabled={linkingTaskId === task.id}
-                        className="w-10 h-10 bg-teal-100 text-teal-600 rounded-xl flex items-center justify-center hover:bg-teal-600 hover:text-white transition-all disabled:opacity-50 shrink-0 shadow-sm"
-                      >
-                        {linkingTaskId === task.id ? (
-                          <Loader2 className="animate-spin" size={18} />
-                        ) : (
-                          <Link size={18} />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-gray-800 truncate">{task.title}</div>
-                        <div className="text-xs text-gray-400 flex items-center gap-2 mt-0.5">
-                          <span className="bg-gray-100 px-2 py-0.5 rounded">{task.section?.number}</span>
-                          <span className="truncate">{task.section?.title}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {task.owner && (
-                          <UserAvatar name={task.owner.name} role={task.owner.role} size="xs" />
-                        )}
-                        {task.blocked && (
-                          <AlertTriangle size={16} className="text-red-500" />
-                        )}
-                        <div className={`px-3 py-1 rounded-lg text-xs font-black ${
-                          task.status === 100 ? 'bg-emerald-100 text-emerald-700' :
-                          task.status > 0 ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-500'
-                        }`}>
-                          {task.status}%
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Link size={28} className="text-gray-300" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-600 mb-1">No Tasks Linked Yet</h3>
+              <p className="text-sm text-gray-400">
+                Use the selector below to link tasks to this group
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Link Tasks Panel - SECOND (always visible for admin) */}
+        {isAdmin && (
+          <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
+            {/* Panel Header */}
+            <div
+              onClick={() => setShowLinkPanel(!showLinkPanel)}
+              className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 border-b border-gray-100 cursor-pointer hover:from-gray-100 hover:to-gray-150 transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-gray-700 flex items-center gap-2">
+                  <Plus size={18} className="text-teal-600" />
+                  Link More Tasks
+                </h4>
+                <div className={`text-xs font-bold text-gray-400 transition-transform ${showLinkPanel ? 'rotate-180' : ''}`}>
+                  {showLinkPanel ? 'Hide' : 'Show'} ({availableTasks.length} available)
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Footer */}
-            {availableTasks.length > 30 && (
-              <div className="p-3 text-center text-xs text-gray-400 border-t border-gray-100 bg-gray-50">
-                Showing 30 of {availableTasks.length} tasks. Use filters to narrow down.
-              </div>
-            )}
-            {availableTasks.length > 0 && availableTasks.length <= 30 && (
-              <div className="p-3 text-center text-xs text-gray-400 border-t border-gray-100 bg-gray-50">
-                {availableTasks.length} task{availableTasks.length !== 1 ? 's' : ''} available to link
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Linked Tasks List */}
-        {linkedTasks.length > 0 ? (
-          <div className="space-y-3">
-            {linkedTasks.map(task => (
-              <div key={task.id} className="group relative">
-                <TaskListCard
-                  task={task}
-                  section={sections.find(s => s.id === task.section_id)}
-                  onClick={() => {}}
-                  canEdit={canEditTasks(currentProfile)}
-                />
-                {isAdmin && (
-                  <button
-                    onClick={() => handleUnlinkTask(task.id)}
-                    disabled={linkingTaskId === task.id}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-red-100 text-red-500 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50 shadow-lg"
-                    title="Unlink task"
-                  >
-                    {linkingTaskId === task.id ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      <Unlink size={18} />
+            {/* Expandable Content */}
+            {showLinkPanel && (
+              <>
+                {/* Filters */}
+                <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-5 border-b border-teal-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
+                      <Filter size={14} />
+                      Filters
+                    </span>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="text-xs font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1"
+                      >
+                        <X size={12} />
+                        Clear
+                      </button>
                     )}
-                  </button>
+                  </div>
+
+                  {/* Search */}
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search tasks..."
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Filter Buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    {/* Progress Filter */}
+                    <div className="flex bg-white rounded-lg p-0.5 border border-gray-100 shadow-sm">
+                      <button
+                        onClick={() => setProgressFilter('All')}
+                        className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                          progressFilter === 'All' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setProgressFilter('NotStarted')}
+                        className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                          progressFilter === 'NotStarted' ? 'bg-slate-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Circle size={10} />
+                        0%
+                      </button>
+                      <button
+                        onClick={() => setProgressFilter('InProgress')}
+                        className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                          progressFilter === 'InProgress' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        <PlayCircle size={10} />
+                        Active
+                      </button>
+                      <button
+                        onClick={() => setProgressFilter('Completed')}
+                        className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                          progressFilter === 'Completed' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        <CheckCircle2 size={10} />
+                        100%
+                      </button>
+                    </div>
+
+                    {/* Section Filter */}
+                    <select
+                      value={sectionFilter}
+                      onChange={(e) => setSectionFilter(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 shadow-sm"
+                    >
+                      <option value="All">All Sections</option>
+                      {level1Sections.map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.number}: {s.title}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Owner Filter */}
+                    <select
+                      value={ownerFilter}
+                      onChange={(e) => setOwnerFilter(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 shadow-sm"
+                    >
+                      <option value="All">All Owners</option>
+                      {profiles.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Task List */}
+                <div className="max-h-96 overflow-auto">
+                  {availableTasks.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <Search size={24} className="text-gray-300" />
+                      </div>
+                      <p className="text-gray-500 font-medium">
+                        {hasActiveFilters ? 'No tasks match your filters' : 'All tasks are already linked'}
+                      </p>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearFilters}
+                          className="mt-2 text-sm font-bold text-teal-600 hover:text-teal-700"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {availableTasks.slice(0, 30).map(task => (
+                        <div
+                          key={task.id}
+                          className="p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors"
+                        >
+                          {/* Task Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-gray-800 truncate">{task.title}</div>
+                            <div className="text-xs text-gray-400 flex items-center gap-2 mt-0.5">
+                              <span className="bg-gray-100 px-2 py-0.5 rounded">{task.section?.number}</span>
+                              <span className="truncate">{task.section?.title}</span>
+                            </div>
+                          </div>
+
+                          {/* Status indicators */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            {task.owner && (
+                              <UserAvatar name={task.owner.name} role={task.owner.role} size="xs" />
+                            )}
+                            {task.blocked && (
+                              <AlertTriangle size={14} className="text-red-500" />
+                            )}
+                            <div className={`px-2 py-0.5 rounded text-xs font-bold ${
+                              task.status === 100 ? 'bg-emerald-100 text-emerald-700' :
+                              task.status > 0 ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-500'
+                            }`}>
+                              {task.status}%
+                            </div>
+                          </div>
+
+                          {/* Link Button - Rose-Purple Gradient */}
+                          <button
+                            onClick={() => handleLinkTask(task.id)}
+                            disabled={linkingTaskId === task.id}
+                            className="shrink-0 px-4 py-2 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-lg shadow-pink-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {linkingTaskId === task.id ? (
+                              <Loader2 className="animate-spin" size={14} />
+                            ) : (
+                              'Link this task'
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                {availableTasks.length > 30 && (
+                  <div className="p-3 text-center text-xs text-gray-400 border-t border-gray-100 bg-gray-50">
+                    Showing 30 of {availableTasks.length} tasks. Use filters to narrow down.
+                  </div>
                 )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2rem] border border-gray-100 p-16 text-center shadow-sm">
-            <div className="w-20 h-20 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <Link size={40} className="text-teal-600" />
-            </div>
-            <h3 className="text-xl font-black text-gray-800 mb-2">No Tasks Linked Yet</h3>
-            <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto">
-              Link existing tasks to this group to track progress and organize your work
-            </p>
-            {isAdmin && !showLinkPanel && (
-              <button
-                onClick={() => setShowLinkPanel(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20"
-              >
-                <Plus size={20} />
-                Link Tasks
-              </button>
+              </>
             )}
           </div>
         )}
