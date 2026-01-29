@@ -117,8 +117,8 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
     };
 
     try {
-      // Fetch profile with timeout
-      const timeout = new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      // Fetch profile with generous timeout (15 seconds)
+      const timeout = new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
       const profile = await Promise.race([getProfile(supabaseUser.id), timeout]);
 
       if (profile) {
