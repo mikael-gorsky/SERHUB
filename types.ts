@@ -196,7 +196,7 @@ export interface Group {
   title: string;
   description?: string;
   parent_id?: string;
-  level: 1 | 2 | 3;
+  level: 1 | 2;  // Only 2 levels of hierarchy supported
   sort_order: number;
   is_fixed: boolean;  // Level 1 groups are fixed
   owner_id?: string;
@@ -213,6 +213,8 @@ export interface Group {
   task_count?: number;      // Number of linked tasks
   completed_count?: number; // Tasks at 100%
   blocked_count?: number;   // Blocked tasks
+  active_count?: number;    // Tasks in progress (status > 0 and < 100)
+  overdue_count?: number;   // Tasks past due_date and not completed
 }
 
 export interface GroupTask {

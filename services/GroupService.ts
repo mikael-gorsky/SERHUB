@@ -34,10 +34,20 @@ export const getGroupsHierarchy = async (): Promise<Group[]> => {
   // Attach tasks and compute stats for each group
   const attachTasksAndStats = (group: Group) => {
     const tasks = groupTasks.filter(gt => gt.group_id === group.id).map(gt => gt.task);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     group.linked_tasks = tasks;
     group.task_count = tasks.length;
     group.completed_count = tasks.filter(t => t.status === 100).length;
     group.blocked_count = tasks.filter(t => t.blocked).length;
+    group.active_count = tasks.filter(t => t.status > 0 && t.status < 100).length;
+    group.overdue_count = tasks.filter(t => {
+      if (t.status === 100) return false; // Completed tasks not overdue
+      const dueDate = new Date(t.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today;
+    }).length;
     group.progress = tasks.length > 0
       ? Math.round(tasks.reduce((sum, t) => sum + t.status, 0) / tasks.length)
       : 0;
@@ -65,9 +75,19 @@ export const getGroupsHierarchy = async (): Promise<Group[]> => {
     });
     if (g1.linked_tasks) allDescendantTasks.push(...g1.linked_tasks);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     g1.task_count = allDescendantTasks.length;
     g1.completed_count = allDescendantTasks.filter(t => t.status === 100).length;
     g1.blocked_count = allDescendantTasks.filter(t => t.blocked).length;
+    g1.active_count = allDescendantTasks.filter(t => t.status > 0 && t.status < 100).length;
+    g1.overdue_count = allDescendantTasks.filter(t => {
+      if (t.status === 100) return false;
+      const dueDate = new Date(t.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today;
+    }).length;
     g1.progress = allDescendantTasks.length > 0
       ? Math.round(allDescendantTasks.reduce((sum, t) => sum + t.status, 0) / allDescendantTasks.length)
       : 0;
@@ -211,6 +231,18 @@ export const unlinkTaskFromGroup = async (groupId: string, taskId: string): Prom
   return true;
 };
 
+// Get all task IDs that are linked to ANY group
+export const getAllLinkedTaskIds = async (): Promise<Set<string>> => {
+  if (!isConfigured || !supabase) {
+    throw new Error("Database not configured.");
+  }
+  const { data, error } = await supabase
+    .from('serhub_group_tasks')
+    .select('task_id');
+  if (error) throw error;
+  return new Set((data || []).map(d => d.task_id));
+};
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -284,6 +316,7 @@ export const GroupService = {
   getTasks: getTasksForGroup,
   linkTask: linkTaskToGroup,
   unlinkTask: unlinkTaskFromGroup,
+  getAllLinkedTaskIds,
   getNextSortOrder,
   generateNextNumber
 };

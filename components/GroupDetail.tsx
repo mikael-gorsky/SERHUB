@@ -34,6 +34,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
   const { currentUser, currentProfile } = useAuth();
   const [linkedTasks, setLinkedTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allLinkedTaskIds, setAllLinkedTaskIds] = useState<Set<string>>(new Set());
   const [sections, setSections] = useState<Section[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,16 +52,18 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [tasksData, sectionsData, profilesData, groupTasks] = await Promise.all([
+      const [tasksData, sectionsData, profilesData, groupTasks, linkedIds] = await Promise.all([
         TaskService.getAll(),
         SectionService.getAll(),
         UserService.getAll(),
-        GroupService.getTasks(group.id)
+        GroupService.getTasks(group.id),
+        GroupService.getAllLinkedTaskIds()
       ]);
       setAllTasks(tasksData);
       setSections(sectionsData);
       setProfiles(profilesData);
       setLinkedTasks(groupTasks);
+      setAllLinkedTaskIds(linkedIds);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -72,12 +75,10 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
     fetchData();
   }, [group.id]);
 
-  const linkedTaskIds = useMemo(() => new Set(linkedTasks.map(t => t.id)), [linkedTasks]);
-
   const availableTasks = useMemo(() => {
     return allTasks.filter(task => {
-      // Exclude already linked tasks
-      if (linkedTaskIds.has(task.id)) return false;
+      // Exclude tasks already linked to ANY group
+      if (allLinkedTaskIds.has(task.id)) return false;
 
       // Search filter
       if (searchTerm) {
@@ -105,7 +106,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
 
       return true;
     });
-  }, [allTasks, linkedTaskIds, searchTerm, progressFilter, sectionFilter, ownerFilter]);
+  }, [allTasks, allLinkedTaskIds, searchTerm, progressFilter, sectionFilter, ownerFilter]);
 
   const handleLinkTask = async (taskId: string) => {
     setLinkingTaskId(taskId);
@@ -172,80 +173,34 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-100/50">
-      {/* Colorful Header */}
-      <div className="bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-500 px-6 py-5 shrink-0 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-              <FolderTree size={28} className="text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="text-white/70 font-bold text-lg">{group.number}</span>
-                <h1 className="text-2xl font-black text-white tracking-tight">{group.title}</h1>
-                {group.is_fixed && (
-                  <span className="text-xs px-2 py-1 bg-white/20 text-white rounded-lg font-medium">Fixed</span>
-                )}
-              </div>
-              {group.description && (
-                <p className="text-white/80 text-sm mt-1">{group.description}</p>
-              )}
-              {group.owner && (
-                <div className="flex items-center gap-2 mt-2">
-                  <UserAvatar name={group.owner.name} role={group.owner.role} size="xs" />
-                  <span className="text-white/70 text-sm">{group.owner.name}</span>
-                </div>
+      {/* Simplified Header */}
+      <div className="bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-500 px-6 py-4 shrink-0 shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+            <FolderTree size={24} className="text-white" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-white/70 font-bold">{group.number}</span>
+              <h1 className="text-xl font-black text-white tracking-tight">{group.title}</h1>
+              {group.is_fixed && (
+                <span className="text-xs px-2 py-0.5 bg-white/20 text-white rounded font-medium">Fixed</span>
               )}
             </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 backdrop-blur rounded-2xl px-5 py-3 text-center">
-              <div className="text-3xl font-black text-white">{stats.progress}%</div>
-              <div className="text-xs text-white/70 font-medium uppercase tracking-wider">Progress</div>
-            </div>
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-lg">
-              <div className="flex items-center gap-4 text-sm">
-                <div className="text-center">
-                  <div className="text-xl font-black text-emerald-600">{stats.completed}</div>
-                  <div className="text-[10px] text-gray-400 font-bold uppercase">Done</div>
-                </div>
-                <div className="h-8 w-px bg-gray-200" />
-                <div className="text-center">
-                  <div className="text-xl font-black text-blue-600">{stats.inProgress}</div>
-                  <div className="text-[10px] text-gray-400 font-bold uppercase">Active</div>
-                </div>
-                <div className="h-8 w-px bg-gray-200" />
-                <div className="text-center">
-                  <div className="text-xl font-black text-gray-400">{stats.notStarted}</div>
-                  <div className="text-[10px] text-gray-400 font-bold uppercase">Pending</div>
-                </div>
-                {stats.blocked > 0 && (
-                  <>
-                    <div className="h-8 w-px bg-gray-200" />
-                    <div className="text-center">
-                      <div className="text-xl font-black text-red-600">{stats.blocked}</div>
-                      <div className="text-[10px] text-gray-400 font-bold uppercase">Blocked</div>
-                    </div>
-                  </>
-                )}
+            {group.owner && (
+              <div className="flex items-center gap-2 mt-1">
+                <UserAvatar name={group.owner.name} role={group.owner.role} size="xs" />
+                <span className="text-white/70 text-sm">{group.owner.name}</span>
               </div>
+            )}
+          </div>
+          {/* Simple progress badge */}
+          {(linkedTasks.length > 0) && (
+            <div className="bg-white/20 backdrop-blur rounded-xl px-4 py-2 text-center">
+              <div className="text-2xl font-black text-white">{stats.progress}%</div>
+              <div className="text-xs text-white/70">{linkedTasks.length} tasks</div>
             </div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className={`h-full transition-all duration-500 ${
-                stats.progress === 100 ? 'bg-emerald-300' :
-                stats.blocked > 0 ? 'bg-amber-300' : 'bg-white'
-              }`}
-              style={{ width: `${stats.progress}%` }}
-            />
-          </div>
+          )}
         </div>
       </div>
 
@@ -334,15 +289,17 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
                 </div>
               ))}
 
-              {/* Add Linked Tasks Button - After existing tasks */}
+              {/* Add Linked Tasks Button - Consistent size */}
               {isAdmin && (
-                <button
-                  onClick={() => setShowLinkPanel(!showLinkPanel)}
-                  className="w-full mt-4 py-4 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-2xl text-sm font-black uppercase tracking-wider hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2"
-                >
-                  <Plus size={18} />
-                  Add Linked Tasks
-                </button>
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={() => setShowLinkPanel(!showLinkPanel)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-xl text-sm font-bold hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-md shadow-pink-500/20 flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add Linked Tasks
+                  </button>
+                </div>
               )}
             </div>
           ) : (
@@ -357,9 +314,9 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
               {isAdmin && (
                 <button
                   onClick={() => setShowLinkPanel(!showLinkPanel)}
-                  className="px-6 py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-xl text-sm font-black uppercase tracking-wider hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-lg shadow-pink-500/30 inline-flex items-center gap-2"
+                  className="px-5 py-2.5 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-xl text-sm font-bold hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-md shadow-pink-500/20 inline-flex items-center gap-2"
                 >
-                  <Plus size={18} />
+                  <Plus size={16} />
                   Add Linked Tasks
                 </button>
               )}
