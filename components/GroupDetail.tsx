@@ -308,7 +308,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
           </h3>
 
           {linkedTasks.length > 0 ? (
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3">
               {linkedTasks.map(task => (
                 <div key={task.id} className="group relative">
                   <TaskListCard
@@ -333,42 +333,62 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
                   )}
                 </div>
               ))}
+
+              {/* Add Linked Tasks Button - After existing tasks */}
+              {isAdmin && (
+                <button
+                  onClick={() => setShowLinkPanel(!showLinkPanel)}
+                  className="w-full mt-4 py-4 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-2xl text-sm font-black uppercase tracking-wider hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} />
+                  Add Linked Tasks
+                </button>
+              )}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm mb-6">
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm">
               <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Link size={28} className="text-gray-300" />
               </div>
               <h3 className="text-lg font-bold text-gray-600 mb-1">No Tasks Linked Yet</h3>
-              <p className="text-sm text-gray-400">
-                Use the selector below to link tasks to this group
+              <p className="text-sm text-gray-400 mb-4">
+                Link tasks to track progress for this group
               </p>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowLinkPanel(!showLinkPanel)}
+                  className="px-6 py-3 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white rounded-xl text-sm font-black uppercase tracking-wider hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 transition-all shadow-lg shadow-pink-500/30 inline-flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Add Linked Tasks
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Link Tasks Panel - SECOND (always visible for admin) */}
-        {isAdmin && (
+        {/* Link Tasks Panel - Shows when "Add Linked Tasks" is clicked */}
+        {isAdmin && showLinkPanel && (
           <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
             {/* Panel Header */}
-            <div
-              onClick={() => setShowLinkPanel(!showLinkPanel)}
-              className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 border-b border-gray-100 cursor-pointer hover:from-gray-100 hover:to-gray-150 transition-all"
-            >
+            <div className="bg-gradient-to-r from-teal-600 to-emerald-500 p-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-gray-700 flex items-center gap-2">
-                  <Plus size={18} className="text-teal-600" />
-                  Link More Tasks
+                <h4 className="text-sm font-black text-white flex items-center gap-2">
+                  <Search size={18} />
+                  Select Tasks to Link
                 </h4>
-                <div className={`text-xs font-bold text-gray-400 transition-transform ${showLinkPanel ? 'rotate-180' : ''}`}>
-                  {showLinkPanel ? 'Hide' : 'Show'} ({availableTasks.length} available)
-                </div>
+                <button
+                  onClick={() => setShowLinkPanel(false)}
+                  className="text-white/70 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
+                >
+                  <X size={18} />
+                </button>
               </div>
+              <p className="text-white/70 text-xs mt-1">{availableTasks.length} tasks available</p>
             </div>
 
-            {/* Expandable Content */}
-            {showLinkPanel && (
-              <>
+            {/* Content */}
+            <>
                 {/* Filters */}
                 <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-5 border-b border-teal-100">
                   <div className="flex items-center justify-between mb-3">
@@ -546,8 +566,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
                     Showing 30 of {availableTasks.length} tasks. Use filters to narrow down.
                   </div>
                 )}
-              </>
-            )}
+            </>
           </div>
         )}
       </div>
