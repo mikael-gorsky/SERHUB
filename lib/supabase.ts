@@ -258,13 +258,14 @@ export const getTasksByUser = async (userId: string): Promise<Task[]> => {
 
 export const createTask = async (task: Partial<Task>): Promise<Task | null> => {
   if (!supabase) return null;
+  console.log('Creating task with data:', JSON.stringify(task, null, 2));
   const { data, error } = await supabase
     .from('serhub_tasks')
     .insert(task)
     .select()
     .single();
   if (error) {
-    console.error('Error creating task:', error);
+    console.error('Error creating task:', error.message, 'Code:', error.code, 'Details:', error.details, 'Hint:', error.hint);
     return null;
   }
   return data;
