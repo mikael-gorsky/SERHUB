@@ -171,34 +171,59 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
     );
   }
 
+  // Get background and text colors matching left panel based on completion percentage
+  const getHeaderBgClass = () => {
+    if (linkedTasks.length === 0) return 'bg-gray-50';
+    if (stats.progress >= 75) return 'bg-green-100';
+    if (stats.progress >= 50) return 'bg-yellow-100';
+    if (stats.progress >= 25) return 'bg-orange-100';
+    return 'bg-red-100';
+  };
+
+  const getHeaderTextClass = () => {
+    if (linkedTasks.length === 0) return 'text-gray-700';
+    if (stats.progress >= 75) return 'text-green-800';
+    if (stats.progress >= 50) return 'text-yellow-800';
+    if (stats.progress >= 25) return 'text-orange-800';
+    return 'text-red-800';
+  };
+
+  const isLevel1 = group.level === 1;
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-100/50">
-      {/* Simplified Header */}
-      <div className="bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-500 px-6 py-4 shrink-0 shadow-lg">
+      {/* Header with same background as left panel */}
+      <div className={`${getHeaderBgClass()} px-6 py-4 shrink-0 border-b border-gray-200`}>
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-            <FolderTree size={24} className="text-white" />
+          <div className="w-12 h-12 bg-white/50 rounded-xl flex items-center justify-center">
+            <FolderTree size={24} className="text-teal-600" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-white/70 font-bold">{group.number}</span>
-              <h1 className="text-xl font-black text-white tracking-tight">{group.title}</h1>
+              <span className="text-gray-400 font-bold">{group.number}</span>
+              {/* Level 1: all-caps green, Level 2: teal - matching left panel */}
+              <h1 className={isLevel1
+                ? 'text-base font-bold text-green-800 uppercase tracking-wide'
+                : 'text-sm font-bold text-teal-600'
+              }>
+                {isLevel1 ? group.title.toUpperCase() : group.title}
+              </h1>
               {group.is_fixed && (
-                <span className="text-xs px-2 py-0.5 bg-white/20 text-white rounded font-medium">Fixed</span>
+                <span className="text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded font-medium">Fixed</span>
               )}
             </div>
             {group.owner && (
               <div className="flex items-center gap-2 mt-1">
                 <UserAvatar name={group.owner.name} role={group.owner.role} size="xs" />
-                <span className="text-white/70 text-sm">{group.owner.name}</span>
+                <span className="text-gray-600 text-sm">{group.owner.name}</span>
               </div>
             )}
           </div>
-          {/* Simple progress badge */}
+          {/* Progress badge */}
           {(linkedTasks.length > 0) && (
-            <div className="bg-white/20 backdrop-blur rounded-xl px-4 py-2 text-center">
-              <div className="text-2xl font-black text-white">{stats.progress}%</div>
-              <div className="text-xs text-white/70">{linkedTasks.length} tasks</div>
+            <div className={`bg-white/50 rounded-xl px-4 py-2 text-center`}>
+              <div className={`text-2xl font-black ${getHeaderTextClass()}`}>{stats.progress}%</div>
+              <div className="text-xs text-gray-500">{linkedTasks.length} tasks</div>
             </div>
           )}
         </div>

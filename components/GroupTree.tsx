@@ -83,14 +83,23 @@ const GroupTree: React.FC<GroupTreeProps> = ({
 
   const getIcon = (group: Group, isSelected: boolean, isExpanded: boolean) => {
     const hasChildren = group.children && group.children.length > 0;
-    const iconClass = isSelected ? 'text-white' : 'text-teal-600';
+    const iconClass = 'text-teal-600';
 
     if (hasChildren) {
       return isExpanded
         ? <FolderOpen size={18} className={iconClass} />
         : <Folder size={18} className={iconClass} />;
     }
-    return <FolderTree size={18} className={isSelected ? 'text-white' : 'text-gray-400'} />;
+    return <FolderTree size={18} className="text-gray-400" />;
+  };
+
+  // Get background color based on completion percentage (exported for GroupDetail to use)
+  const getCompletionBgClass = (taskCount: number, progressPct: number) => {
+    if (taskCount === 0) return 'bg-gray-50';
+    if (progressPct >= 75) return 'bg-green-100';
+    if (progressPct >= 50) return 'bg-yellow-100';
+    if (progressPct >= 25) return 'bg-orange-100';
+    return 'bg-red-100';
   };
 
   const renderGroup = (group: Group, depth: number = 0) => {
@@ -107,15 +116,15 @@ const GroupTree: React.FC<GroupTreeProps> = ({
     const activeCount = group.active_count || 0;
     const overdueCount = group.overdue_count || 0;
 
+    // Text style matching SectionTree: Level 1 = all-caps green, Level 2 = teal
     const getTextStyle = () => {
-      if (isSelected) return 'font-bold text-white text-sm';
-      if (isLevel1) return 'font-bold text-gray-800 text-sm';
-      return 'font-semibold text-gray-700 text-sm';
+      if (isLevel1) return 'font-bold text-green-800 text-base uppercase tracking-wide';
+      return 'font-bold text-teal-600 text-sm';
     };
 
-    // Background color based on completion percentage
+    // Background color based on completion percentage (same for selected and unselected)
     const getCompletionBgStyle = () => {
-      if (isSelected) return 'bg-teal-600';
+      const baseBg = getCompletionBgClass(group.task_count || 0, progress);
       if ((group.task_count || 0) === 0) return 'bg-gray-50 hover:bg-gray-100';
       if (progress >= 75) return 'bg-green-100 hover:bg-green-200';
       if (progress >= 50) return 'bg-yellow-100 hover:bg-yellow-200';
@@ -124,7 +133,6 @@ const GroupTree: React.FC<GroupTreeProps> = ({
     };
 
     const getCompletionTextStyle = () => {
-      if (isSelected) return 'text-white';
       if ((group.task_count || 0) === 0) return 'text-gray-500';
       if (progress >= 75) return 'text-green-800';
       if (progress >= 50) return 'text-yellow-800';
@@ -132,10 +140,13 @@ const GroupTree: React.FC<GroupTreeProps> = ({
       return 'text-red-800';
     };
 
+    // Selection uses red border instead of background change
+    const selectionBorderClass = isSelected ? 'border-4 border-red-500' : 'border-4 border-transparent';
+
     return (
       <div key={group.id}>
         <div
-          className={`group flex flex-col gap-1 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 ${getCompletionBgStyle()}`}
+          className={`group flex flex-col gap-1 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 ${getCompletionBgStyle()} ${selectionBorderClass}`}
           style={{ marginLeft: `${depth * 16}px` }}
           onClick={() => onSelectGroup(group)}
         >
@@ -145,7 +156,7 @@ const GroupTree: React.FC<GroupTreeProps> = ({
             {hasChildren ? (
               <button
                 onClick={(e) => toggleExpand(group.id, e)}
-                className={`p-0.5 rounded transition-colors ${isSelected ? 'text-white/80 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                className="p-0.5 rounded transition-colors text-gray-400 hover:text-gray-600"
               >
                 {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </button>
@@ -154,14 +165,14 @@ const GroupTree: React.FC<GroupTreeProps> = ({
             )}
 
             {/* Icon */}
-            {getIcon(group, isSelected, isExpanded)}
+            {getIcon(group, false, isExpanded)}
 
-            {/* Number & Title */}
+            {/* Number & Title - Level 1 is all-caps */}
             <div className="flex-1 min-w-0">
               <span className={getTextStyle()}>
-                <span className={isSelected ? 'text-white/70' : 'text-gray-400'}>{group.number}</span>
+                <span className="text-gray-400">{group.number}</span>
                 {' '}
-                {group.title}
+                {isLevel1 ? group.title.toUpperCase() : group.title}
               </span>
             </div>
 
@@ -172,7 +183,7 @@ const GroupTree: React.FC<GroupTreeProps> = ({
               </span>
             )}
 
-            {/* Actions (admin only, on hover) - moved here */}
+            {/* Actions (admin only, on hover) */}
             {isAdmin && (
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <button
@@ -180,11 +191,7 @@ const GroupTree: React.FC<GroupTreeProps> = ({
                     e.stopPropagation();
                     onEditGroup(group);
                   }}
-                  className={`p-1 rounded transition-colors ${
-                    isSelected
-                      ? 'text-white/70 hover:text-white hover:bg-white/20'
-                      : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50'
-                  }`}
+                  className="p-1 rounded transition-colors text-gray-400 hover:text-teal-600 hover:bg-teal-50"
                   title="Edit group"
                 >
                   <Edit2 size={14} />
@@ -195,11 +202,7 @@ const GroupTree: React.FC<GroupTreeProps> = ({
                       e.stopPropagation();
                       onAddGroup(group);
                     }}
-                    className={`p-1 rounded transition-colors ${
-                      isSelected
-                        ? 'text-white/70 hover:text-white hover:bg-white/20'
-                        : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50'
-                    }`}
+                    className="p-1 rounded transition-colors text-gray-400 hover:text-teal-600 hover:bg-teal-50"
                     title="Add sub-group"
                   >
                     <Plus size={14} />
@@ -211,20 +214,20 @@ const GroupTree: React.FC<GroupTreeProps> = ({
 
           {/* Bottom row: Task counters (Done | Active | Overdue) */}
           {(group.task_count || 0) > 0 && (
-            <div className={`flex items-center gap-3 ml-7 text-xs ${isSelected ? 'text-white/70' : getCompletionTextStyle()}`}>
+            <div className={`flex items-center gap-3 ml-7 text-xs ${getCompletionTextStyle()}`}>
               <span className="flex items-center gap-1">
-                <span className={isSelected ? 'text-white/50' : 'text-gray-400'}>Done:</span>
+                <span className="text-gray-400">Done:</span>
                 <span className="font-bold">{doneCount}</span>
               </span>
-              <span className={isSelected ? 'text-white/30' : 'text-gray-300'}>|</span>
+              <span className="text-gray-300">|</span>
               <span className="flex items-center gap-1">
-                <span className={isSelected ? 'text-white/50' : 'text-gray-400'}>Active:</span>
+                <span className="text-gray-400">Active:</span>
                 <span className="font-bold">{activeCount}</span>
               </span>
-              <span className={isSelected ? 'text-white/30' : 'text-gray-300'}>|</span>
+              <span className="text-gray-300">|</span>
               <span className="flex items-center gap-1">
-                <span className={isSelected ? 'text-white/50' : 'text-gray-400'}>Overdue:</span>
-                <span className={`font-bold ${overdueCount > 0 && !isSelected ? 'text-red-600' : ''}`}>{overdueCount}</span>
+                <span className="text-gray-400">Overdue:</span>
+                <span className={`font-bold ${overdueCount > 0 ? 'text-red-600' : ''}`}>{overdueCount}</span>
               </span>
             </div>
           )}
