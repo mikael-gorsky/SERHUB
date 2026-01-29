@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, CheckSquare, Calendar, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, Users, Settings, GanttChart } from 'lucide-react';
 
-export type TabType = 'dashboard' | 'tasks' | 'meetings' | 'users' | 'settings';
+export type TabType = 'dashboard' | 'tasks' | 'gantt' | 'meetings' | 'users' | 'settings';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -11,6 +11,7 @@ interface TabNavigationProps {
 const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={18} /> },
+  { id: 'gantt', label: 'Gantt', icon: <GanttChart size={18} /> },
   { id: 'meetings', label: 'Calendar', icon: <Calendar size={18} /> },
   { id: 'users', label: 'Contributors', icon: <Users size={18} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },

@@ -185,3 +185,43 @@ export interface CalendarEvent {
   type: 'meeting' | 'deadline';
   data: Meeting | Task;
 }
+
+// ============================================
+// GROUP TYPES (Gantt view)
+// ============================================
+
+export interface Group {
+  id: string;
+  number: string;
+  title: string;
+  description?: string;
+  parent_id?: string;
+  level: 1 | 2 | 3;
+  sort_order: number;
+  is_fixed: boolean;  // Level 1 groups are fixed
+  owner_id?: string;
+  created_at: string;
+  updated_at: string;
+
+  // Joined/computed
+  owner?: Profile;
+  children?: Group[];
+  linked_tasks?: Task[];
+
+  // Derived from linked tasks
+  progress?: number;        // Average of linked task progress
+  task_count?: number;      // Number of linked tasks
+  completed_count?: number; // Tasks at 100%
+  blocked_count?: number;   // Blocked tasks
+}
+
+export interface GroupTask {
+  id: string;
+  group_id: string;
+  task_id: string;
+  created_at: string;
+}
+
+export type GroupStatus = 'not_started' | 'in_progress' | 'on_track' | 'at_risk' | 'delayed' | 'completed' | 'blocked';
+
+export type GanttViewMode = 'weekly' | 'biweekly' | 'monthly';

@@ -7,6 +7,7 @@ import SectionTree from './components/SectionTree';
 import SectionDetail from './components/SectionDetail';
 import TabNavigation, { TabType } from './components/TabNavigation';
 import TasksManager from './components/TasksManager';
+import GanttView from './components/GanttView';
 import MeetingsView from './components/MeetingsView';
 import ProjectCalendar from './components/ProjectCalendar';
 import TeamManager from './components/TeamManager';
@@ -147,6 +148,10 @@ const MainView = () => {
           <div className="h-full overflow-auto p-6">
             <TasksManager />
           </div>
+        )}
+
+        {activeTab === 'gantt' && (
+          <GanttView />
         )}
 
         {activeTab === 'meetings' && (
