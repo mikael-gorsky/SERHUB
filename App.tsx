@@ -87,7 +87,7 @@ const AppHeader = () => {
 const MainView = () => {
   const { theme } = useTheme();
   const { sections } = useSections();
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('gantt');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [calendarViewMode, setCalendarViewMode] = useState<'list' | 'calendar'>('list');
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
