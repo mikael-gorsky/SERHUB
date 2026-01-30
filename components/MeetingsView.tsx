@@ -320,8 +320,26 @@ const MeetingsView = () => {
   }
 
   return (
-    <div className="flex h-full gap-6 p-6">
-      {/* Left Side - Meetings List */}
+    <div className="flex flex-col h-full">
+      {/* Info Block Header */}
+      <div className="p-4 border-b border-gray-200 bg-white shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
+            <Calendar size={20} className="text-teal-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-800">Project Calendar</h2>
+            <p className="text-xs text-gray-500">
+              Meetings and deadlines
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-6">
+        <div className="flex h-full gap-6">
+          {/* Left Side - Meetings List */}
       <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
         {/* Header */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
@@ -795,6 +813,8 @@ const MeetingsView = () => {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 };

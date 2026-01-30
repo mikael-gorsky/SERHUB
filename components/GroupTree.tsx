@@ -212,23 +212,37 @@ const GroupTree: React.FC<GroupTreeProps> = ({
             )}
           </div>
 
-          {/* Bottom row: Task counters (Done | Active | Overdue) */}
+          {/* Bottom row: Graphical stats */}
           {(group.task_count || 0) > 0 && (
-            <div className={`flex items-center gap-3 ml-7 text-xs ${getCompletionTextStyle()}`}>
-              <span className="flex items-center gap-1">
-                <span className="text-gray-400">Done:</span>
-                <span className="font-bold">{doneCount}</span>
-              </span>
-              <span className="text-gray-300">|</span>
-              <span className="flex items-center gap-1">
-                <span className="text-gray-400">Active:</span>
-                <span className="font-bold">{activeCount}</span>
-              </span>
-              <span className="text-gray-300">|</span>
-              <span className="flex items-center gap-1">
-                <span className="text-gray-400">Overdue:</span>
-                <span className={`font-bold ${overdueCount > 0 ? 'text-red-600' : ''}`}>{overdueCount}</span>
-              </span>
+            <div className="flex items-center gap-2 ml-7">
+              {/* "for all subgroups" text for Level 1 with children */}
+              {isLevel1 && hasChildren && (
+                <span className="text-[10px] text-gray-400 italic mr-1">all subgroups:</span>
+              )}
+              {/* Mini progress bar */}
+              <div className="flex-1 max-w-[100px] h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-teal-500 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              {/* Colored dots for stats */}
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="flex items-center gap-0.5" title="Completed">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span className="text-gray-600">{doneCount}</span>
+                </span>
+                <span className="flex items-center gap-0.5" title="Active">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span className="text-gray-600">{activeCount}</span>
+                </span>
+                {overdueCount > 0 && (
+                  <span className="flex items-center gap-0.5" title="Overdue">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span className="text-red-600 font-bold">{overdueCount}</span>
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>

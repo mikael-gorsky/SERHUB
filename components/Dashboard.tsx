@@ -11,7 +11,7 @@ import {
   Cell
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { FileText, CheckCircle, AlertTriangle, Clock, ArrowRight, Loader2, Flag } from 'lucide-react';
+import { FileText, CheckCircle, AlertTriangle, Clock, ArrowRight, Loader2, Flag, LayoutDashboard } from 'lucide-react';
 import { SectionService } from '../services/SectionService';
 import { TaskService } from '../services/TaskService';
 import { EventService } from '../services/EventService';
@@ -85,11 +85,29 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6 h-full">
-      {/* --- Main Content Area (8 Cols) --- */}
-      <div className="col-span-8 space-y-6 overflow-y-auto pb-8">
-        
-        {/* Project Status Banner */}
+    <div className="flex flex-col h-full">
+      {/* Info Block Header */}
+      <div className="p-4 border-b border-gray-200 bg-white shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
+            <LayoutDashboard size={20} className="text-teal-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-800">SER Report</h2>
+            <p className="text-xs text-gray-500">
+              Progress tracking and statistics
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-6">
+        <div className="grid grid-cols-12 gap-6">
+          {/* --- Main Content Area (8 Cols) --- */}
+          <div className="col-span-8 space-y-6 pb-8">
+
+            {/* Project Status Banner */}
         <div className="bg-gradient-to-r from-hit-blue to-hit-dark p-8 rounded-2xl shadow-xl shadow-hit-blue/10 text-white flex items-center justify-between">
            <div>
              <h2 className="text-3xl font-black mb-1">Institutional SER Status</h2>
@@ -231,6 +249,8 @@ const Dashboard = () => {
               <ArrowRight size={18} className="text-blue-200 group-hover:text-white transition-colors" />
             </button>
           </div>
+        </div>
+        </div>
         </div>
       </div>
     </div>

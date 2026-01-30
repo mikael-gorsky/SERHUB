@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   Users,
   Circle,
-  PlayCircle
+  PlayCircle,
+  CheckSquare
 } from 'lucide-react';
 import { TaskService } from '../services/TaskService';
 import { SectionService } from '../services/SectionService';
@@ -241,8 +242,26 @@ const TasksManager = () => {
   }
 
   return (
-    <div className="flex h-full gap-8 bg-transparent">
-      {/* Sidebar Filters */}
+    <div className="flex flex-col h-full">
+      {/* Info Block Header */}
+      <div className="p-4 border-b border-gray-200 bg-white shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
+            <CheckSquare size={20} className="text-teal-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-800">Tasks Manager</h2>
+            <p className="text-xs text-gray-500">
+              Create and manage tasks
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-6">
+        <div className="flex h-full gap-8 bg-transparent">
+          {/* Sidebar Filters */}
       <div className="w-80 shrink-0 flex flex-col gap-6 overflow-y-auto pb-10">
         {/* Progress Filter */}
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 shrink-0">
@@ -640,6 +659,8 @@ const TasksManager = () => {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 };
