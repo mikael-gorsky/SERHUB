@@ -305,22 +305,10 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
     );
   }
 
-  // Get background and text colors matching left panel based on completion percentage
-  const getHeaderBgClass = () => {
-    if (linkedTasks.length === 0) return 'bg-gray-50';
-    if (stats.progress >= 75) return 'bg-green-100';
-    if (stats.progress >= 50) return 'bg-yellow-100';
-    if (stats.progress >= 25) return 'bg-orange-100';
-    return 'bg-red-100';
-  };
+  // Neutral header background for all task groups
+  const getHeaderBgClass = () => 'bg-gray-50';
 
-  const getHeaderTextClass = () => {
-    if (linkedTasks.length === 0) return 'text-gray-700';
-    if (stats.progress >= 75) return 'text-green-800';
-    if (stats.progress >= 50) return 'text-yellow-800';
-    if (stats.progress >= 25) return 'text-orange-800';
-    return 'text-red-800';
-  };
+  const getHeaderTextClass = () => 'text-gray-700';
 
   const isLevel1 = group.level === 1;
 

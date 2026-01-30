@@ -7,7 +7,10 @@ import {
   FolderOpen,
   Plus,
   Edit2,
-  Loader2
+  Loader2,
+  CheckCircle,
+  PlayCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { Group } from '../types';
 import { GroupService } from '../services/GroupService';
@@ -212,34 +215,41 @@ const GroupTree: React.FC<GroupTreeProps> = ({
             )}
           </div>
 
-          {/* Bottom row: Graphical stats */}
+          {/* Bottom row: Graphical stats - enlarged with icons and text */}
           {(group.task_count || 0) > 0 && (
-            <div className="flex items-center gap-2 ml-7">
+            <div className="flex flex-col gap-2 ml-7 mt-2">
               {/* "for all subgroups" text for Level 1 with children */}
               {isLevel1 && hasChildren && (
-                <span className="text-[10px] text-gray-400 italic mr-1">all subgroups:</span>
+                <span className="text-xs text-gray-400 italic">for all tasks in subgroups:</span>
               )}
-              {/* Mini progress bar */}
-              <div className="flex-1 max-w-[100px] h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              {/* Large progress bar */}
+              <div className="w-full max-w-[300px] h-5 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-teal-500 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
+                  className="h-full bg-teal-500 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
+                  style={{ width: `${Math.max(progress, 10)}%` }}
+                >
+                  {progress > 15 && (
+                    <span className="text-[10px] font-bold text-white">{progress}%</span>
+                  )}
+                </div>
               </div>
-              {/* Colored dots for stats */}
-              <div className="flex items-center gap-2 text-[10px]">
-                <span className="flex items-center gap-0.5" title="Completed">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  <span className="text-gray-600">{doneCount}</span>
+              {/* Stats with icons and text */}
+              <div className="flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-1.5" title="Completed">
+                  <CheckCircle size={16} className="text-green-500" />
+                  <span className="text-gray-500">Done:</span>
+                  <span className="font-bold text-green-700">{doneCount}</span>
                 </span>
-                <span className="flex items-center gap-0.5" title="Active">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span className="text-gray-600">{activeCount}</span>
+                <span className="flex items-center gap-1.5" title="Active">
+                  <PlayCircle size={16} className="text-blue-500" />
+                  <span className="text-gray-500">Active:</span>
+                  <span className="font-bold text-blue-700">{activeCount}</span>
                 </span>
                 {overdueCount > 0 && (
-                  <span className="flex items-center gap-0.5" title="Overdue">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span className="text-red-600 font-bold">{overdueCount}</span>
+                  <span className="flex items-center gap-1.5" title="Overdue">
+                    <AlertTriangle size={16} className="text-red-500" />
+                    <span className="text-gray-500">Overdue:</span>
+                    <span className="font-bold text-red-600">{overdueCount}</span>
                   </span>
                 )}
               </div>

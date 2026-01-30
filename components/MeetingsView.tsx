@@ -321,7 +321,7 @@ const MeetingsView = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Info Block Header */}
+      {/* Combined Info Block Header with Controls */}
       <div className="p-4 border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
@@ -333,28 +333,10 @@ const MeetingsView = () => {
               Meetings and deadlines
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className="flex h-full gap-6">
-          {/* Left Side - Meetings List */}
-      <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
-        {/* Header */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
-          {canCreateMeetings(currentProfile) && (
-            <button
-              onClick={openCreateModal}
-              className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
-              title="Create New Meeting"
-            >
-              <Plus size={20} />
-            </button>
-          )}
 
           <div className="flex-1" />
 
+          {/* Controls moved to header */}
           <label className="flex items-center gap-2 cursor-pointer shrink-0">
             <input
               type="checkbox"
@@ -364,7 +346,24 @@ const MeetingsView = () => {
             />
             <span className="text-sm text-gray-600 whitespace-nowrap">Show past</span>
           </label>
+
+          {canCreateMeetings(currentProfile) && (
+            <button
+              onClick={openCreateModal}
+              className="w-10 h-10 shrink-0 flex items-center justify-center bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-all"
+              title="Create New Meeting"
+            >
+              <Plus size={20} />
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-6">
+        <div className="flex h-full gap-6">
+          {/* Left Side - Meetings List */}
+      <div className="w-1/2 flex flex-col gap-6 overflow-hidden">
 
         {/* Meetings List */}
         <div className="flex-1 overflow-y-auto space-y-4 pb-6">
