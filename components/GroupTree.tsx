@@ -8,8 +8,8 @@ import {
   Plus,
   Edit2,
   Loader2,
-  CheckCircle,
-  PlayCircle,
+  CheckCircle2,
+  Hourglass,
   AlertTriangle
 } from 'lucide-react';
 import { Group } from '../types';
@@ -215,42 +215,49 @@ const GroupTree: React.FC<GroupTreeProps> = ({
             )}
           </div>
 
-          {/* Bottom row: Graphical stats - enlarged with icons and text */}
+          {/* Bottom row: Graphical stats - large icons with card layout */}
           {(group.task_count || 0) > 0 && (
-            <div className="flex flex-col gap-2 ml-7 mt-2">
-              {/* "for all subgroups" text for Level 1 with children */}
-              {isLevel1 && hasChildren && (
-                <span className="text-xs text-gray-400 italic">for all tasks in subgroups:</span>
-              )}
-              {/* Large progress bar */}
-              <div className="w-full max-w-[300px] h-5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
-                  style={{ width: `${Math.max(progress, 10)}%` }}
-                >
-                  {progress > 15 && (
-                    <span className="text-[10px] font-bold text-white">{progress}%</span>
-                  )}
+            <div className="flex flex-col gap-3 ml-7 mt-3">
+              {/* Progress bar row with label */}
+              <div className="flex items-center gap-3">
+                {isLevel1 && hasChildren && (
+                  <span className="text-xs text-gray-500 whitespace-nowrap">for all tasks in subgroups:</span>
+                )}
+                <div className="flex-1 max-w-[200px] h-6 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-teal-500 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
+                    style={{ width: `${Math.max(progress, 10)}%` }}
+                  >
+                    {progress > 15 && (
+                      <span className="text-xs font-bold text-white">{progress}%</span>
+                    )}
+                  </div>
                 </div>
+                {progress <= 15 && (
+                  <span className="text-sm font-bold text-gray-600">{progress}%</span>
+                )}
               </div>
-              {/* Stats with icons and text */}
-              <div className="flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1.5" title="Completed">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span className="text-gray-500">Done:</span>
-                  <span className="font-bold text-green-700">{doneCount}</span>
-                </span>
-                <span className="flex items-center gap-1.5" title="Active">
-                  <PlayCircle size={16} className="text-blue-500" />
-                  <span className="text-gray-500">Active:</span>
-                  <span className="font-bold text-blue-700">{activeCount}</span>
-                </span>
+              {/* Stats cards with large icons */}
+              <div className="flex items-stretch gap-4">
+                {/* Done card */}
+                <div className="flex flex-col items-center bg-green-50 rounded-lg px-4 py-2 min-w-[80px]">
+                  <span className="text-xs text-gray-500 mb-1">Done</span>
+                  <CheckCircle2 size={28} className="text-green-500 mb-1" />
+                  <span className="text-sm font-bold text-green-700">{doneCount} tasks</span>
+                </div>
+                {/* Active card */}
+                <div className="flex flex-col items-center bg-amber-50 rounded-lg px-4 py-2 min-w-[80px]">
+                  <span className="text-xs text-gray-500 mb-1">Active</span>
+                  <Hourglass size={28} className="text-amber-500 mb-1" />
+                  <span className="text-sm font-bold text-amber-700">{activeCount} tasks</span>
+                </div>
+                {/* Overdue card - only show if there are overdue tasks */}
                 {overdueCount > 0 && (
-                  <span className="flex items-center gap-1.5" title="Overdue">
-                    <AlertTriangle size={16} className="text-red-500" />
-                    <span className="text-gray-500">Overdue:</span>
-                    <span className="font-bold text-red-600">{overdueCount}</span>
-                  </span>
+                  <div className="flex flex-col items-center bg-red-50 rounded-lg px-4 py-2 min-w-[80px]">
+                    <span className="text-xs text-gray-500 mb-1">Overdue</span>
+                    <AlertTriangle size={28} className="text-red-500 mb-1" />
+                    <span className="text-sm font-bold text-red-600">{overdueCount} tasks</span>
+                  </div>
                 )}
               </div>
             </div>
