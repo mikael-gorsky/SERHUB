@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Folder, FileText, Globe, ChevronRight, Users } from 'lucide-react';
+import { Folder, FileText, Globe, ChevronRight, Users, LayoutDashboard } from 'lucide-react';
 import { Section } from '../types';
 import { useSections } from '../contexts/SectionsContext';
 
@@ -161,6 +161,21 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
 
   return (
     <div className="w-[40%] min-w-[360px] bg-gray-50 border-r border-gray-200 flex flex-col h-full">
+      {/* Info Block Header */}
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
+            <LayoutDashboard size={20} className="text-teal-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-800">SER Report</h2>
+            <p className="text-xs text-gray-500">
+              Sections and deliverables
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Section Tree */}
       <div className="flex-1 overflow-y-auto p-4 pt-2">
         <div className="space-y-1">
