@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, MoreHorizontal, X, Save, Loader2, AlertTriangle, CheckCircle2, Users } from 'lucide-react';
 import { Section, Task, Profile } from '../types';
 import { getTasksBySection, getProfiles, updateTask, createTask, supabase, isConfigured } from '../lib/supabase';
@@ -8,6 +8,21 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSections } from '../contexts/SectionsContext';
 import { canCreateTasks, canEditTasks } from '../lib/permissions';
 import { getProgressStatus } from '../lib/progressUtils';
+
+// Helper to flatten section hierarchy for dropdowns
+const flattenSections = (sections: Section[]): Section[] => {
+  const result: Section[] = [];
+  const flatten = (sects: Section[], level: number = 0) => {
+    sects.forEach(s => {
+      result.push(s);
+      if (s.children && s.children.length > 0) {
+        flatten(s.children, level + 1);
+      }
+    });
+  };
+  flatten(sections);
+  return result;
+};
 
 interface TaskFormData {
   id?: string;
@@ -35,6 +50,9 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Flatten sections for dropdown (includes all levels)
+  const allSections = useMemo(() => flattenSections(sections), [sections]);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -371,7 +389,7 @@ const SectionDetail: React.FC<SectionDetailProps> = ({ section, onAddTask }) => 
                       className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-teal-500"
                     >
                       <option value="">Select section...</option>
-                      {sections.map(s => (
+                      {allSections.map(s => (
                         <option key={s.id} value={s.id}>
                           {s.number}: {s.title}
                         </option>

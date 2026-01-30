@@ -183,23 +183,6 @@ const SectionTree: React.FC<SectionTreeProps> = ({ selectedSectionId, onSelectSe
         </div>
       </div>
 
-      {/* Progress Card */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <p className="text-xs font-bold text-teal-600 tracking-wider mb-3">
-            TOTAL SECTION PROGRESS
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-teal-500 rounded-full transition-all duration-500"
-                style={{ width: `${totalProgress}%` }}
-              />
-            </div>
-            <span className="text-sm font-bold text-gray-700">{totalProgress}%</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

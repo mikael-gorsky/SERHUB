@@ -29,6 +29,21 @@ import { canEditTasks } from '../lib/permissions';
 import { getProgressStatus } from '../lib/progressUtils';
 import { supabase, isConfigured, updateTask } from '../lib/supabase';
 
+// Helper to flatten section hierarchy for dropdowns
+const flattenSections = (sections: Section[]): Section[] => {
+  const result: Section[] = [];
+  const flatten = (sects: Section[]) => {
+    sects.forEach(s => {
+      result.push(s);
+      if (s.children && s.children.length > 0) {
+        flatten(s.children);
+      }
+    });
+  };
+  flatten(sections);
+  return result;
+};
+
 interface TaskFormData {
   id: string;
   title: string;
@@ -61,6 +76,9 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
   const [loading, setLoading] = useState(true);
   const [showLinkPanel, setShowLinkPanel] = useState(false);
   const [linkingTaskId, setLinkingTaskId] = useState<string | null>(null);
+
+  // Flatten context sections for dropdown (includes all levels)
+  const allContextSections = useMemo(() => flattenSections(contextSections), [contextSections]);
 
   // Task edit modal state
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -751,7 +769,7 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ group, onRefresh, onSelectGro
                       className="w-full bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 h-14 px-4 focus:ring-2 focus:ring-teal-500"
                     >
                       <option value="">Select section...</option>
-                      {contextSections.map(s => (
+                      {allContextSections.map(s => (
                         <option key={s.id} value={s.id}>
                           {s.number}: {s.title}
                         </option>
